@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 249, 250, 251;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Calendar styles */
+.calendar-day {
+  @apply relative p-2 min-h-[80px] border border-gray-100;
+}
+
+.calendar-day.today {
+  @apply bg-primary-50;
+}
+
+.calendar-day.other-month {
+  @apply bg-gray-50 text-gray-400;
+}
+
+.calendar-event {
+  @apply text-xs p-1 rounded truncate mb-1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Focus styles */
+input:focus,
+select:focus,
+textarea:focus {
+  @apply outline-none;
+}
+
+/* Button transitions */
+button {
+  @apply transition-all duration-200;
+}
