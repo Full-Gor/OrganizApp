@@ -65,7 +65,17 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
 
       let assistantContent = data.response || data.message || "Je n'ai pas compris.";
 
-      // Exécuter l'action si présente
+      // Gérer les actions multiples (format "actions": [...])
+      if (data.actions && Array.isArray(data.actions)) {
+        let successCount = 0;
+        for (const actionItem of data.actions) {
+          const result = executeAIAction({ type: actionItem.action, data: actionItem.data });
+          if (result.success) successCount++;
+        }
+        if (onAction) onAction();
+      }
+      // Exécuter l'action unique si présente
+      else
       if (data.action && data.action !== 'message') {
         const result = executeAIAction({ type: data.action, data: data.data });
 

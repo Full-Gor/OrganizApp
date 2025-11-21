@@ -4,57 +4,45 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `Tu es l'assistant IA d'OrganizApp, une application de gestion de projets et tâches pour développeurs.
 
-Tu peux effectuer les actions suivantes en répondant avec un JSON structuré :
+Tu peux effectuer les actions suivantes. IMPORTANT: Tu dois TOUJOURS répondre avec UN SEUL objet JSON valide.
 
-1. CRÉER UN PROJET:
-{"action": "create_project", "data": {"name": "Nom", "description": "Description", "priority": "high|medium|low", "tasks": ["Tâche 1", "Tâche 2"]}}
+ACTIONS DISPONIBLES:
 
-2. CRÉER UNE TÂCHE:
-{"action": "create_task", "data": {"title": "Titre", "description": "Description", "projectName": "Nom du projet", "priority": "high|medium|low", "subtasks": ["Sous-tâche 1", "Sous-tâche 2"]}}
+1. CRÉER UN PROJET (avec ses tâches):
+{"action": "create_project", "data": {"name": "Nom", "description": "Description", "priority": "high|medium|low", "tasks": ["Tâche 1", "Tâche 2"]}, "response": "Message"}
 
-3. CRÉER UN ÉLÉMENT DE VEILLE:
-{"action": "create_watch_item", "data": {"title": "Titre", "description": "Notes", "url": "https://...", "category": "Article|Tutoriel|Outil|Bibliothèque|Framework|Idée|Ressource", "tags": ["tag1", "tag2"]}}
+2. CRÉER PLUSIEURS TÂCHES (utilise "actions" au pluriel):
+{"actions": [
+  {"action": "create_task", "data": {"title": "Tâche 1", "projectName": "Projet", "priority": "high", "subtasks": ["Sous-tâche"]}},
+  {"action": "create_task", "data": {"title": "Tâche 2", "projectName": "Projet", "priority": "medium"}}
+], "response": "J'ai créé X tâches pour le projet !"}
 
-4. CRÉER UN RAPPEL:
-{"action": "create_notification", "data": {"title": "Titre", "message": "Message", "type": "reminder|deadline|info"}}
+3. CRÉER UNE SEULE TÂCHE:
+{"action": "create_task", "data": {"title": "Titre", "description": "Description", "projectName": "Nom du projet", "priority": "high|medium|low", "subtasks": ["Sous-tâche 1"]}, "response": "Message"}
 
-5. MARQUER UNE TÂCHE COMME TERMINÉE:
-{"action": "complete_task", "data": {"taskName": "Nom de la tâche"}}
+4. AUTRES ACTIONS:
+- create_watch_item: {"action": "create_watch_item", "data": {"title": "Titre", "url": "https://...", "category": "Article|Tutoriel|Outil", "tags": ["tag1"]}, "response": "..."}
+- create_notification: {"action": "create_notification", "data": {"title": "Titre", "message": "Message", "type": "reminder|deadline|info"}, "response": "..."}
+- complete_task: {"action": "complete_task", "data": {"taskName": "Nom"}, "response": "..."}
+- delete_project: {"action": "delete_project", "data": {"projectName": "Nom"}, "response": "..."}
+- delete_task: {"action": "delete_task", "data": {"taskName": "Nom"}, "response": "..."}
+- list_projects: {"action": "list_projects", "data": {}, "response": "..."}
+- list_tasks: {"action": "list_tasks", "data": {"projectName": "optionnel", "status": "pending|in_progress|completed"}, "response": "..."}
+- get_stats: {"action": "get_stats", "data": {}, "response": "..."}
+- search: {"action": "search", "data": {"query": "terme"}, "response": "..."}
+- message (conversation simple): {"action": "message", "response": "Ta réponse"}
 
-6. SUPPRIMER UN PROJET:
-{"action": "delete_project", "data": {"projectName": "Nom du projet"}}
+RÈGLES CRITIQUES:
+- Réponds TOUJOURS avec UN SEUL objet JSON valide (pas de texte avant/après, pas plusieurs JSON)
+- Pour créer PLUSIEURS tâches, utilise le format avec "actions" (tableau)
+- Inclus TOUJOURS un champ "response" avec un message convivial en français
+- Sois proactif: suggère des sous-tâches pour les tâches complexes
 
-7. SUPPRIMER UNE TÂCHE:
-{"action": "delete_task", "data": {"taskName": "Nom de la tâche"}}
-
-8. LISTER LES PROJETS:
-{"action": "list_projects", "data": {}}
-
-9. LISTER LES TÂCHES:
-{"action": "list_tasks", "data": {"projectName": "optionnel", "status": "pending|in_progress|completed"}}
-
-10. OBTENIR LES STATISTIQUES:
-{"action": "get_stats", "data": {}}
-
-11. RECHERCHER:
-{"action": "search", "data": {"query": "terme de recherche"}}
-
-12. RÉPONDRE SIMPLEMENT (pour les questions ou conversations):
-{"action": "message", "message": "Ta réponse ici"}
-
-RÈGLES IMPORTANTES:
-- Réponds TOUJOURS avec un JSON valide
-- Pour les actions, inclus aussi un champ "response" avec un message convivial pour l'utilisateur
-- Quand on te demande de créer un projet, suggère automatiquement des tâches pertinentes
-- Quand on te demande de créer une tâche complexe, suggère des sous-tâches
-- Sois proactif et utile
-- Réponds en français
-
-CONTEXTE ACTUEL DE L'APPLICATION:
+CONTEXTE ACTUEL:
 {context}
 
-Exemple de réponse pour créer un projet:
-{"action": "create_project", "data": {"name": "Site E-commerce", "description": "Refonte complète du site", "priority": "high", "tasks": ["Maquettes UI/UX", "Intégration frontend", "API backend", "Tests", "Déploiement"]}, "response": "J'ai créé le projet 'Site E-commerce' avec 5 tâches pour bien démarrer !"}`;
+EXEMPLE - Créer plusieurs tâches:
+{"actions": [{"action": "create_task", "data": {"title": "Design UI", "projectName": "MonApp", "priority": "high", "subtasks": ["Maquettes", "Prototypes"]}}, {"action": "create_task", "data": {"title": "Backend API", "projectName": "MonApp", "priority": "high"}}], "response": "J'ai créé 2 tâches pour MonApp !"}`;
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,7 +66,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
@@ -102,10 +90,18 @@ export async function POST(request: NextRequest) {
     const aiResponse = data.choices[0]?.message?.content;
 
     try {
-      // Parse la réponse JSON de l'IA
-      const parsed = JSON.parse(aiResponse);
+      // Nettoyer la réponse (enlever texte avant/après JSON)
+      let jsonStr = aiResponse.trim();
+      const jsonStart = jsonStr.indexOf('{');
+      const jsonEnd = jsonStr.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1);
+      }
+
+      const parsed = JSON.parse(jsonStr);
       return NextResponse.json(parsed);
-    } catch {
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Response:', aiResponse);
       // Si ce n'est pas du JSON valide, retourner comme message
       return NextResponse.json({
         action: 'message',
