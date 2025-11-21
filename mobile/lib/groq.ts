@@ -1,5 +1,5 @@
-// Clé API Groq - À remplacer par votre vraie clé
-const GROQ_API_KEY = 'gsk_votre_cle_api_groq';
+// Clé API Groq
+const GROQ_API_KEY = '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';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const SYSTEM_PROMPT = `Tu es l'assistant IA d'OrganizApp, une application de gestion de projets et tâches pour développeurs.
