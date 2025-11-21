@@ -63,6 +63,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="assistant"
+        options={{
+          title: 'IA',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="sparkles" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="notifications"
         options={{
           title: 'Alertes',
@@ -90,6 +99,7 @@ export default function TabsLayout() {
               )}
             </View>
           ),
+          href: null, // Masquer cet onglet de la barre (accessible via menu)
         }}
       />
     </Tabs>

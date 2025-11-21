@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useStore';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import QuickAddModal from './QuickAddModal';
+import AIAssistant from './AIAssistant';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -27,8 +28,16 @@ const navigation = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { unreadCount } = useNotifications();
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+
+  // Rafraîchir la page quand l'IA effectue une action
+  const handleAIAction = useCallback(() => {
+    router.refresh();
+    // Forcer un re-render en rechargeant la page
+    window.location.reload();
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -129,6 +138,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Quick Add Modal */}
       <QuickAddModal open={quickAddOpen} onClose={() => setQuickAddOpen(false)} />
+
+      {/* AI Assistant */}
+      <AIAssistant onAction={handleAIAction} />
     </div>
   );
 }
