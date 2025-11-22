@@ -18,6 +18,13 @@ export interface Task {
   status: TaskStatus;
   dueDate: string | null;
   subtasks: SubTask[];
+  // Event-specific fields
+  duration?: number;
+  travelTime?: number;
+  endTime?: string;
+  departureTime?: string;
+  location?: string;
+  isEvent?: boolean;
   createdAt: string;
   updatedAt: string;
 }

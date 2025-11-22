@@ -4,8 +4,9 @@ import { generateId, projectColors } from './utils';
 
 export interface AIAction {
   type: 'create_project' | 'create_task' | 'create_watch_item' | 'create_notification' |
-        'create_event' | 'update_project' | 'update_task' | 'delete_project' | 'delete_task' |
-        'complete_task' | 'list_projects' | 'list_tasks' | 'get_stats' | 'search' | 'message';
+        'create_event' | 'update_event' | 'delete_event' | 'update_project' | 'update_task' |
+        'delete_project' | 'delete_task' | 'complete_task' | 'list_projects' | 'list_tasks' |
+        'list_events' | 'get_stats' | 'search' | 'message';
   data?: any;
   message?: string;
 }
@@ -139,22 +140,17 @@ export async function executeAIAction(action: AIAction): Promise<{ success: bool
       }
 
       case 'create_event': {
-        // Créer un événement = une tâche avec une date (apparaît dans le calendrier)
         const projects = await storage.getProjects();
         let projectId = action.data.projectId;
 
-        // Chercher un projet "Planning" ou "Agenda" ou utiliser le premier projet actif
         if (!projectId) {
           const planningProject = projects.find(p =>
             p.name.toLowerCase().includes('planning') ||
-            p.name.toLowerCase().includes('agenda') ||
-            p.name.toLowerCase().includes('rdv') ||
-            p.name.toLowerCase().includes('événement')
+            p.name.toLowerCase().includes('agenda')
           );
           if (planningProject) {
             projectId = planningProject.id;
           } else {
-            // Créer un projet "Planning" s'il n'existe pas
             const newProject: Project = {
               id: generateId(),
               name: 'Planning',
@@ -171,36 +167,48 @@ export async function executeAIAction(action: AIAction): Promise<{ success: bool
           }
         }
 
-        // Parser la date
-        let eventDate = action.data.date || action.data.dueDate || now;
-        if (typeof eventDate === 'string' && !eventDate.includes('T')) {
-          // Si c'est juste une date sans heure, ajouter l'heure si fournie
-          if (action.data.time) {
-            eventDate = `${eventDate}T${action.data.time}:00`;
-          } else {
-            eventDate = `${eventDate}T09:00:00`;
-          }
+        let eventDate = action.data.date || now.split('T')[0];
+        const eventTime = action.data.time || '09:00';
+        if (!eventDate.includes('T')) {
+          eventDate = `${eventDate}T${eventTime}:00`;
         }
+
+        const startDate = new Date(eventDate);
+        const duration = action.data.duration || 60;
+        const travelTime = action.data.travelTime || 0;
+        const departureDate = new Date(startDate.getTime() - travelTime * 60000);
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+
+        const descParts = [];
+        if (eventTime) descParts.push(`🕐 ${eventTime}`);
+        if (duration) descParts.push(`⏱️ ${duration >= 60 ? `${Math.floor(duration/60)}h${duration%60 || ''}` : `${duration}min`}`);
+        if (travelTime > 0) descParts.push(`🚗 ${travelTime}min`);
+        if (action.data.location) descParts.push(`📍 ${action.data.location}`);
 
         const task: Task = {
           id: generateId(),
           projectId,
-          title: action.data.title || action.data.name || 'Événement',
-          description: action.data.description || `${action.data.time ? 'Heure: ' + action.data.time : ''} ${action.data.location ? '- Lieu: ' + action.data.location : ''}`.trim(),
-          priority: action.data.priority || 'high',
+          title: action.data.title || 'Événement',
+          description: descParts.join(' | '),
+          priority: 'high',
           status: 'pending',
           dueDate: eventDate,
           subtasks: [],
+          duration,
+          travelTime: travelTime > 0 ? travelTime : undefined,
+          endTime: endDate.toISOString(),
+          departureTime: travelTime > 0 ? departureDate.toISOString() : undefined,
+          location: action.data.location,
+          isEvent: true,
           createdAt: now,
           updatedAt: now,
         };
         await storage.saveTask(task);
 
-        // Créer aussi une notification de rappel
         const notification: Notification = {
           id: generateId(),
           title: `Rappel: ${task.title}`,
-          message: task.description || `Événement prévu le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
+          message: task.description,
           type: 'reminder',
           read: false,
           relatedId: task.id,
@@ -210,11 +218,64 @@ export async function executeAIAction(action: AIAction): Promise<{ success: bool
         };
         await storage.saveNotification(notification);
 
+        const timeInfo = travelTime > 0
+          ? `Départ: ${departureDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`
+          : eventTime;
+
         return {
           success: true,
-          message: `Événement "${task.title}" ajouté au planning pour le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
+          message: `${task.title} ajouté ! ${timeInfo}`,
           data: { task, notification }
         };
+      }
+
+      case 'update_event': {
+        const tasks = await storage.getTasks();
+        const task = tasks.find(t =>
+          (t.isEvent && t.title.toLowerCase().includes(action.data.eventName?.toLowerCase() || '')) ||
+          t.id === action.data.eventId
+        );
+        if (!task) return { success: false, message: "Événement non trouvé" };
+
+        if (action.data.title) task.title = action.data.title;
+        if (action.data.time || action.data.date) {
+          const newDate = action.data.date || task.dueDate?.split('T')[0];
+          const newTime = action.data.time || task.dueDate?.split('T')[1]?.substring(0, 5) || '09:00';
+          task.dueDate = `${newDate}T${newTime}:00`;
+        }
+        if (action.data.duration !== undefined) task.duration = action.data.duration;
+        if (action.data.travelTime !== undefined) task.travelTime = action.data.travelTime;
+
+        if (task.dueDate) {
+          const startDate = new Date(task.dueDate);
+          task.endTime = new Date(startDate.getTime() + (task.duration || 60) * 60000).toISOString();
+          task.departureTime = task.travelTime ? new Date(startDate.getTime() - task.travelTime * 60000).toISOString() : undefined;
+        }
+
+        task.updatedAt = now;
+        await storage.saveTask(task);
+        return { success: true, message: `${task.title} mis à jour !`, data: { task } };
+      }
+
+      case 'delete_event': {
+        const tasks = await storage.getTasks();
+        const task = tasks.find(t =>
+          (t.isEvent && t.title.toLowerCase().includes(action.data.eventName?.toLowerCase() || '')) ||
+          t.id === action.data.eventId
+        );
+        if (!task) return { success: false, message: "Événement non trouvé" };
+
+        const notifications = await storage.getNotifications();
+        for (const n of notifications.filter(n => n.relatedId === task.id)) {
+          await storage.deleteNotification(n.id);
+        }
+        await storage.deleteTask(task.id);
+        return { success: true, message: `${task.title} supprimé` };
+      }
+
+      case 'list_events': {
+        const tasks = (await storage.getTasks()).filter(t => t.isEvent);
+        return { success: true, message: `${tasks.length} événement(s)`, data: tasks };
       }
 
       case 'complete_task': {

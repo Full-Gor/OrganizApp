@@ -4,8 +4,9 @@ import { generateId, projectColors } from './utils';
 
 export interface AIAction {
   type: 'create_project' | 'create_task' | 'create_watch_item' | 'create_notification' |
-        'create_event' | 'update_project' | 'update_task' | 'delete_project' | 'delete_task' |
-        'complete_task' | 'list_projects' | 'list_tasks' | 'get_stats' | 'search' | 'message';
+        'create_event' | 'update_event' | 'delete_event' | 'update_project' | 'update_task' |
+        'delete_project' | 'delete_task' | 'complete_task' | 'list_projects' | 'list_tasks' |
+        'list_events' | 'get_stats' | 'search' | 'message';
   data?: any;
   message?: string;
 }
@@ -173,36 +174,73 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
           }
         }
 
-        // Parser la date
-        let eventDate = action.data.date || action.data.dueDate || now;
+        // Parser la date et l'heure
+        let eventDate = action.data.date || action.data.dueDate || now.split('T')[0];
+        const eventTime = action.data.time || '09:00';
         if (typeof eventDate === 'string' && !eventDate.includes('T')) {
-          // Si c'est juste une date sans heure, ajouter l'heure si fournie
-          if (action.data.time) {
-            eventDate = `${eventDate}T${action.data.time}:00`;
-          } else {
-            eventDate = `${eventDate}T09:00:00`;
-          }
+          eventDate = `${eventDate}T${eventTime}:00`;
         }
+
+        // Calculer les heures de départ et de fin
+        const startDate = new Date(eventDate);
+        const duration = action.data.duration || 60; // Durée par défaut: 1h
+        const travelTime = action.data.travelTime || 0;
+
+        const departureDate = new Date(startDate.getTime() - travelTime * 60000);
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+
+        // Construire la description
+        let description = action.data.description || '';
+        const descParts = [];
+        if (eventTime) descParts.push(`🕐 ${eventTime}`);
+        if (duration) descParts.push(`⏱️ Durée: ${duration >= 60 ? `${Math.floor(duration/60)}h${duration%60 > 0 ? duration%60 : ''}` : `${duration}min`}`);
+        if (travelTime > 0) descParts.push(`🚗 Trajet: ${travelTime}min (départ ${departureDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})})`);
+        if (action.data.location) descParts.push(`📍 ${action.data.location}`);
+        if (description) descParts.push(description);
 
         const task: Task = {
           id: generateId(),
           projectId,
           title: action.data.title || action.data.name || 'Événement',
-          description: action.data.description || `${action.data.time ? 'Heure: ' + action.data.time : ''} ${action.data.location ? '- Lieu: ' + action.data.location : ''}`.trim(),
+          description: descParts.join('\n'),
           priority: action.data.priority || 'high',
           status: 'pending',
           dueDate: eventDate,
           subtasks: [],
+          duration,
+          travelTime: travelTime > 0 ? travelTime : undefined,
+          endTime: endDate.toISOString(),
+          departureTime: travelTime > 0 ? departureDate.toISOString() : undefined,
+          location: action.data.location,
+          isEvent: true,
           createdAt: now,
           updatedAt: now,
         };
         storage.saveTask(task);
 
-        // Créer aussi une notification de rappel
-        const notification: Notification = {
+        // Créer notification de rappel pour le départ (si trajet)
+        const notifications: Notification[] = [];
+        if (travelTime > 0) {
+          const departureNotif: Notification = {
+            id: generateId(),
+            title: `🚗 Départ pour ${task.title}`,
+            message: `Partez maintenant pour arriver à l'heure !`,
+            type: 'reminder',
+            read: false,
+            relatedId: task.id,
+            relatedType: 'task',
+            scheduledFor: departureDate.toISOString(),
+            createdAt: now,
+          };
+          storage.saveNotification(departureNotif);
+          notifications.push(departureNotif);
+        }
+
+        // Notification de rappel principal
+        const mainNotif: Notification = {
           id: generateId(),
           title: `Rappel: ${task.title}`,
-          message: task.description || `Événement prévu le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
+          message: task.description,
           type: 'reminder',
           read: false,
           relatedId: task.id,
@@ -210,12 +248,89 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
           scheduledFor: eventDate,
           createdAt: now,
         };
-        storage.saveNotification(notification);
+        storage.saveNotification(mainNotif);
+        notifications.push(mainNotif);
+
+        const timeInfo = travelTime > 0
+          ? `Départ: ${departureDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} → Fin: ${endDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`
+          : `${eventTime} → ${endDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
 
         return {
           success: true,
-          message: `Événement "${task.title}" ajouté au planning pour le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
-          data: { task, notification }
+          message: `Événement "${task.title}" ajouté ! ${timeInfo}`,
+          data: { task, notifications }
+        };
+      }
+
+      case 'update_event': {
+        const tasks = storage.getTasks();
+        const task = tasks.find(t =>
+          (t.isEvent && t.title.toLowerCase().includes(action.data.eventName?.toLowerCase() || '')) ||
+          t.id === action.data.eventId
+        );
+
+        if (!task) {
+          return { success: false, message: "Événement non trouvé" };
+        }
+
+        // Mettre à jour les champs
+        if (action.data.title) task.title = action.data.title;
+        if (action.data.time || action.data.date) {
+          const newDate = action.data.date || task.dueDate?.split('T')[0];
+          const newTime = action.data.time || task.dueDate?.split('T')[1]?.substring(0, 5) || '09:00';
+          task.dueDate = `${newDate}T${newTime}:00`;
+        }
+        if (action.data.duration !== undefined) task.duration = action.data.duration;
+        if (action.data.travelTime !== undefined) task.travelTime = action.data.travelTime;
+        if (action.data.location) task.location = action.data.location;
+
+        // Recalculer les heures
+        if (task.dueDate) {
+          const startDate = new Date(task.dueDate);
+          const duration = task.duration || 60;
+          const travelTime = task.travelTime || 0;
+
+          task.endTime = new Date(startDate.getTime() + duration * 60000).toISOString();
+          task.departureTime = travelTime > 0 ? new Date(startDate.getTime() - travelTime * 60000).toISOString() : undefined;
+        }
+
+        task.updatedAt = now;
+        storage.saveTask(task);
+
+        return {
+          success: true,
+          message: `Événement "${task.title}" mis à jour !`,
+          data: { task }
+        };
+      }
+
+      case 'delete_event': {
+        const tasks = storage.getTasks();
+        const task = tasks.find(t =>
+          (t.isEvent && t.title.toLowerCase().includes(action.data.eventName?.toLowerCase() || '')) ||
+          t.id === action.data.eventId
+        );
+
+        if (!task) {
+          return { success: false, message: "Événement non trouvé" };
+        }
+
+        // Supprimer les notifications liées
+        const notifications = storage.getNotifications();
+        notifications.filter(n => n.relatedId === task.id).forEach(n => {
+          storage.deleteNotification(n.id);
+        });
+
+        storage.deleteTask(task.id);
+        return { success: true, message: `Événement "${task.title}" supprimé` };
+      }
+
+      case 'list_events': {
+        const tasks = storage.getTasks().filter(t => t.isEvent);
+        return {
+          success: true,
+          message: `${tasks.length} événement(s) trouvé(s)`,
+          data: tasks
         };
       }
 

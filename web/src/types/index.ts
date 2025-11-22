@@ -18,6 +18,13 @@ export interface Task {
   status: TaskStatus;
   dueDate: string | null;
   subtasks: SubTask[];
+  // Event-specific fields
+  duration?: number;        // Duration in minutes
+  travelTime?: number;      // Travel time in minutes
+  endTime?: string;         // Calculated end time
+  departureTime?: string;   // Calculated departure time
+  location?: string;        // Event location
+  isEvent?: boolean;        // Flag to distinguish events from tasks
   createdAt: string;
   updatedAt: string;
 }
