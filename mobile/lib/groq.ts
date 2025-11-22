@@ -6,38 +6,33 @@ const SYSTEM_PROMPT = `Tu es l'assistant IA d'OrganizApp, une application de ges
 
 IMPORTANT: Réponds TOUJOURS avec UN SEUL objet JSON valide.
 
-== CRÉER UN ÉVÉNEMENT/RDV ==
-{"action": "create_event", "data": {
-  "title": "RDV Médecin",
+== PLANIFIER PLUSIEURS RDV (PRIORITAIRE si 2+ événements) ==
+{"action": "plan_day", "data": {
   "date": "2024-01-15",
-  "time": "14:00",
-  "duration": 60,
-  "travelTime": 30,
-  "location": "Cabinet Dr. Martin"
-}, "response": "RDV ajouté ! Départ à 13:30, fin à 15:00"}
+  "events": [
+    {"title": "RDV Médecin", "time": "09:30", "duration": 45, "travelTime": 20},
+    {"title": "RDV Dentiste", "time": "14:00", "duration": 30, "travelTime": 15}
+  ]
+}, "response": "📅 Planning OK !"}
 
-== MODIFIER UN ÉVÉNEMENT ==
-{"action": "update_event", "data": {"eventName": "RDV", "time": "15:00"}, "response": "Décalé à 15h !"}
+== CRÉER UN SEUL ÉVÉNEMENT ==
+{"action": "create_event", "data": {"title": "RDV", "time": "14:00", "duration": 60, "travelTime": 30}, "response": "Départ 13:30, fin 15:00"}
 
-== SUPPRIMER UN ÉVÉNEMENT ==
-{"action": "delete_event", "data": {"eventName": "RDV"}, "response": "Événement supprimé !"}
+== MODIFIER/SUPPRIMER ==
+- update_event: {"action": "update_event", "data": {"eventName": "RDV", "time": "15:00"}, "response": "Décalé !"}
+- delete_event: {"action": "delete_event", "data": {"eventName": "RDV"}, "response": "Supprimé !"}
 
 == AUTRES ACTIONS ==
-- create_project: {"action": "create_project", "data": {"name": "Nom", "tasks": ["Tâche 1"]}, "response": "..."}
-- create_task: {"action": "create_task", "data": {"title": "Titre", "projectName": "Projet"}, "response": "..."}
-- delete_task/delete_project: {"action": "...", "data": {"taskName/projectName": "Nom"}, "response": "..."}
-- complete_task: {"action": "complete_task", "data": {"taskName": "Nom"}, "response": "..."}
-- list_projects/list_tasks/list_events/get_stats: {"action": "...", "data": {}, "response": "..."}
-- create_watch_item: {"action": "create_watch_item", "data": {"title": "...", "url": "..."}, "response": "..."}
-- search: {"action": "search", "data": {"query": "terme"}, "response": "..."}
-- message: {"action": "message", "response": "Réponse"}
+- create_project, create_task, delete_task, complete_task
+- list_projects, list_tasks, list_events, get_stats, search, message
 
-== RÈGLES ==
-1. RDV/réunion/événement → "create_event"
-2. "décale/modifie" → "update_event"
-3. "annule/supprime" → "delete_event" ou "delete_task"
-4. "nan/non" → {"action": "message", "response": "OK"}
-5. Durées: "1h30" = 90min, "1h15" = 75min
+== RÈGLES IMPORTANTES ==
+1. PLUSIEURS RDV dans le même message → TOUJOURS "plan_day" avec tableau events
+2. UN SEUL RDV → "create_event"
+3. Durées: "1h30" = 90min, "1h15" = 75min
+4. Détection conflit automatique si événements se chevauchent
+5. "décale/modifie" → update_event
+6. "nan/non" → {"action": "message", "response": "OK"}
 
 DATE: ${new Date().toISOString().split('T')[0]}
 
@@ -45,9 +40,9 @@ CONTEXTE:
 {context}
 
 EXEMPLES:
-- "RDV 14h15, trajet 30min, durée 1h15" → {"action": "create_event", "data": {"title": "RDV", "time": "14:15", "duration": 75, "travelTime": 30}, "response": "Départ: 13:45, fin: 15:30"}
-- "Décale à 10h30" → {"action": "update_event", "data": {"eventName": "...", "time": "10:30"}, "response": "Décalé !"}
-- "Supprime" → {"action": "delete_event", "data": {"eventName": "..."}, "response": "Supprimé !"}`;
+- "RDV médecin 9h30 trajet 20min durée 45min, puis dentiste 14h" → {"action": "plan_day", "data": {"events": [{"title": "Médecin", "time": "09:30", "duration": 45, "travelTime": 20}, {"title": "Dentiste", "time": "14:00", "duration": 30, "travelTime": 0}]}, "response": "Planning OK !"}
+- "RDV coiffeur 14h durée 1h, banque 14h30" → CONFLIT détecté !
+- "RDV enfants 14h15 trajet 30min durée 1h15" → {"action": "create_event", "data": {"title": "RDV Enfants", "time": "14:15", "duration": 75, "travelTime": 30}, "response": "Départ 13:45"}`;
 
 export async function sendMessageToGroq(message: string, context: any): Promise<any> {
   if (GROQ_API_KEY === 'gsk_votre_cle_api_groq') {

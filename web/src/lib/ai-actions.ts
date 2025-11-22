@@ -6,9 +6,22 @@ export interface AIAction {
   type: 'create_project' | 'create_task' | 'create_watch_item' | 'create_notification' |
         'create_event' | 'update_event' | 'delete_event' | 'update_project' | 'update_task' |
         'delete_project' | 'delete_task' | 'complete_task' | 'list_projects' | 'list_tasks' |
-        'list_events' | 'get_stats' | 'search' | 'message';
+        'list_events' | 'get_stats' | 'search' | 'message' | 'plan_day';
   data?: any;
   message?: string;
+}
+
+// Helper: Check if two time ranges overlap
+function checkTimeConflict(
+  start1: Date, end1: Date,
+  start2: Date, end2: Date
+): boolean {
+  return start1 < end2 && start2 < end1;
+}
+
+// Helper: Format time in French
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
 export interface AIContext {
@@ -331,6 +344,139 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
           success: true,
           message: `${tasks.length} événement(s) trouvé(s)`,
           data: tasks
+        };
+      }
+
+      case 'plan_day': {
+        // Planifier plusieurs événements en une fois avec détection de conflits
+        const events = action.data.events || [];
+        if (!Array.isArray(events) || events.length === 0) {
+          return { success: false, message: "Aucun événement à planifier" };
+        }
+
+        const projects = storage.getProjects();
+        let projectId = action.data.projectId;
+
+        // Trouver ou créer le projet Planning
+        if (!projectId) {
+          const planningProject = projects.find(p =>
+            p.name.toLowerCase().includes('planning') ||
+            p.name.toLowerCase().includes('agenda')
+          );
+          if (planningProject) {
+            projectId = planningProject.id;
+          } else {
+            const newProject: Project = {
+              id: generateId(),
+              name: 'Planning',
+              description: 'Événements, RDV et réunions',
+              status: 'active',
+              priority: 'high',
+              dueDate: null,
+              color: '#8B5CF6',
+              createdAt: now,
+              updatedAt: now,
+            };
+            storage.saveProject(newProject);
+            projectId = newProject.id;
+          }
+        }
+
+        // Parser et calculer tous les événements
+        const baseDate = action.data.date || now.split('T')[0];
+        const parsedEvents: Array<{
+          title: string;
+          startTime: Date;
+          endTime: Date;
+          departureTime: Date;
+          duration: number;
+          travelTime: number;
+          location?: string;
+        }> = [];
+
+        for (const evt of events) {
+          const time = evt.time || '09:00';
+          const startTime = new Date(`${baseDate}T${time}:00`);
+          const duration = evt.duration || 60;
+          const travelTime = evt.travelTime || 0;
+          const endTime = new Date(startTime.getTime() + duration * 60000);
+          const departureTime = new Date(startTime.getTime() - travelTime * 60000);
+
+          parsedEvents.push({
+            title: evt.title || 'Événement',
+            startTime,
+            endTime,
+            departureTime,
+            duration,
+            travelTime,
+            location: evt.location,
+          });
+        }
+
+        // Trier par heure de départ
+        parsedEvents.sort((a, b) => a.departureTime.getTime() - b.departureTime.getTime());
+
+        // Détecter les conflits
+        const conflicts: string[] = [];
+        for (let i = 0; i < parsedEvents.length; i++) {
+          for (let j = i + 1; j < parsedEvents.length; j++) {
+            const evt1 = parsedEvents[i];
+            const evt2 = parsedEvents[j];
+
+            // Vérifier si le temps occupé (départ → fin) chevauche
+            if (checkTimeConflict(evt1.departureTime, evt1.endTime, evt2.departureTime, evt2.endTime)) {
+              conflicts.push(`⚠️ ${evt1.title} (fin ${formatTime(evt1.endTime)}) chevauche ${evt2.title} (départ ${formatTime(evt2.departureTime)})`);
+            }
+          }
+        }
+
+        // Créer les événements
+        const createdTasks: Task[] = [];
+        for (const evt of parsedEvents) {
+          const descParts = [`🕐 ${formatTime(evt.startTime)}`];
+          descParts.push(`⏱️ ${evt.duration >= 60 ? `${Math.floor(evt.duration/60)}h${evt.duration%60 > 0 ? evt.duration%60 : ''}` : `${evt.duration}min`}`);
+          if (evt.travelTime > 0) descParts.push(`🚗 ${evt.travelTime}min (départ ${formatTime(evt.departureTime)})`);
+          if (evt.location) descParts.push(`📍 ${evt.location}`);
+
+          const task: Task = {
+            id: generateId(),
+            projectId,
+            title: evt.title,
+            description: descParts.join('\n'),
+            priority: 'high',
+            status: 'pending',
+            dueDate: evt.startTime.toISOString(),
+            subtasks: [],
+            duration: evt.duration,
+            travelTime: evt.travelTime > 0 ? evt.travelTime : undefined,
+            endTime: evt.endTime.toISOString(),
+            departureTime: evt.travelTime > 0 ? evt.departureTime.toISOString() : undefined,
+            location: evt.location,
+            isEvent: true,
+            createdAt: now,
+            updatedAt: now,
+          };
+          storage.saveTask(task);
+          createdTasks.push(task);
+        }
+
+        // Construire le résumé de la journée
+        let summary = `📅 Planning du jour:\n\n`;
+        for (const evt of parsedEvents) {
+          const depInfo = evt.travelTime > 0 ? `🚗 ${formatTime(evt.departureTime)} → ` : '';
+          summary += `${depInfo}${formatTime(evt.startTime)} - ${formatTime(evt.endTime)} : ${evt.title}\n`;
+        }
+
+        if (conflicts.length > 0) {
+          summary += `\n❌ CONFLITS DÉTECTÉS:\n${conflicts.join('\n')}`;
+        } else {
+          summary += `\n✅ Pas de conflit, planning OK !`;
+        }
+
+        return {
+          success: true,
+          message: summary,
+          data: { tasks: createdTasks, conflicts, schedule: parsedEvents }
         };
       }
 
