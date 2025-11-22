@@ -63,21 +63,37 @@ export default function RushPage() {
     // Complete task in current rush
     const updated = rushStorage.completeTask(activeRush.id, activeRush.activeProjectId);
     if (updated) {
-      // Find next Rush in the list to make it blink
+      // Find next Rush in the list to make it blink (with wrap-around)
       const currentRushIndex = rushes.findIndex(r => r.id === activeRush.id);
-      const nextRushIndex = currentRushIndex + 1;
-
       let updatedRushes = rushes.map(r => r.id === updated.id ? updated : r);
 
-      if (nextRushIndex < rushes.length) {
-        const nextRush = rushes[nextRushIndex];
-        // Make next Rush blink (if not completed and not stopped)
-        if (nextRush.status !== 'completed' && !nextRush.blinkingStopped) {
-          const blinkingRush = rushStorage.setRushBlinking(nextRush.id, true);
-          if (blinkingRush) {
-            updatedRushes = updatedRushes.map(r => r.id === blinkingRush.id ? blinkingRush : r);
-            console.log('[handleCompleteTask] Set blinking on next Rush:', blinkingRush.name);
+      // Find next non-completed Rush to blink (wrap around to beginning)
+      let nextRush: Rush | null = null;
+
+      // First look after current index
+      for (let i = currentRushIndex + 1; i < rushes.length; i++) {
+        if (rushes[i].status !== 'completed' && !rushes[i].blinkingStopped && rushes[i].id !== activeRush.id) {
+          nextRush = rushes[i];
+          break;
+        }
+      }
+
+      // Wrap around: look from beginning up to current index
+      if (!nextRush) {
+        for (let i = 0; i < currentRushIndex; i++) {
+          if (rushes[i].status !== 'completed' && !rushes[i].blinkingStopped && rushes[i].id !== activeRush.id) {
+            nextRush = rushes[i];
+            break;
           }
+        }
+      }
+
+      // Make next Rush blink
+      if (nextRush) {
+        const blinkingRush = rushStorage.setRushBlinking(nextRush.id, true);
+        if (blinkingRush) {
+          updatedRushes = updatedRushes.map(r => r.id === blinkingRush.id ? blinkingRush : r);
+          console.log('[handleCompleteTask] Set blinking on next Rush:', blinkingRush.name);
         }
       }
 
