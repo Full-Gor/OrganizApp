@@ -347,14 +347,19 @@ function RushBoard({
         )}
       </div>
 
-      {/* DEBUG: Blinking status indicator */}
-      <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 text-sm">
-        <strong>Debug Blinking:</strong>{' '}
-        {rush.projects.map((p, i) => (
-          <span key={p.id} className={p.isBlinking ? 'text-red-600 font-bold' : 'text-gray-500'}>
-            {p.name}: {p.isBlinking ? 'OUI' : 'non'}{i < rush.projects.length - 1 ? ' | ' : ''}
-          </span>
-        ))}
+      {/* DEBUG: Blinking status indicator - DETAILED */}
+      <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 text-xs space-y-1">
+        <div><strong>Debug Blinking:</strong></div>
+        {rush.projects.map((p, i) => {
+          const isActive = p.id === rush.activeProjectId;
+          const isCompleted = p.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
+          const shouldBlink = p.isBlinking && !p.blinkingStopped && !isActive && !isCompleted;
+          return (
+            <div key={p.id} className={shouldBlink ? 'text-green-600 font-bold' : p.isBlinking ? 'text-orange-600' : 'text-gray-500'}>
+              {p.name}: isBlinking={p.isBlinking ? 'OUI' : 'non'}, stopped={p.blinkingStopped ? 'OUI' : 'non'}, active={isActive ? 'OUI' : 'non'}, completed={isCompleted ? 'OUI' : 'non'} → <strong>BLINK: {shouldBlink ? 'OUI' : 'NON'}</strong>
+            </div>
+          );
+        })}
       </div>
 
       {/* Project Tabs */}
