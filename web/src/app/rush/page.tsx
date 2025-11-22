@@ -450,7 +450,7 @@ function RushBoard({
                     <div className={cn(
                       'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                       isCurrentTask
-                        ? 'bg-orange-500 text-white animate-pulse'
+                        ? 'bg-orange-500 text-white'
                         : isCompleted
                         ? 'bg-green-500 text-white'
                         : isSkipped

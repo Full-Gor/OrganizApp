@@ -463,7 +463,7 @@ export function completeTaskWithBlinking(rushId: string, projectId: string): Rus
   return rush;
 }
 
-// Skip task with blinking cascade
+// Skip task with blinking cascade - skips current task and switches to NEXT PROJECT
 export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | null {
   const rush = getRush(rushId);
   if (!rush) return null;
@@ -476,28 +476,61 @@ export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | 
   const currentTask = project.tasks[project.currentStepIndex];
 
   if (currentTask) {
+    // Mark current task as skipped
     currentTask.status = 'skipped';
     currentTask.completedAt = now;
 
-    // Move to next task
-    if (project.currentStepIndex < project.tasks.length - 1) {
-      project.currentStepIndex++;
-      const nextTask = project.tasks[project.currentStepIndex];
-      nextTask.status = 'in_progress';
-      nextTask.startedAt = now;
+    // Keep current project blinking (skipped means it still needs attention later)
+    project.isBlinking = true;
+    project.waitingSince = now;
+
+    // Find next project that is not completed
+    let nextProjectIndex = projectIndex + 1;
+    let nextProject = null;
+
+    // Look for the next non-completed project
+    while (nextProjectIndex < rush.projects.length) {
+      const candidate = rush.projects[nextProjectIndex];
+      const isCompleted = candidate.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
+      if (!isCompleted) {
+        nextProject = candidate;
+        break;
+      }
+      nextProjectIndex++;
     }
 
-    // Keep current project blinking (skipped means it still needs attention)
-    project.isBlinking = true;
-
-    // Also trigger blinking on next project
-    const nextProjectIndex = projectIndex + 1;
-    if (nextProjectIndex < rush.projects.length) {
-      const nextProject = rush.projects[nextProjectIndex];
-      const isNextCompleted = nextProject.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
-      if (!isNextCompleted && !nextProject.blinkingStopped) {
-        nextProject.isBlinking = true;
+    // If no next project found, wrap around to find first non-completed project
+    if (!nextProject) {
+      for (let i = 0; i < projectIndex; i++) {
+        const candidate = rush.projects[i];
+        const isCompleted = candidate.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
+        if (!isCompleted) {
+          nextProject = candidate;
+          break;
+        }
       }
+    }
+
+    // Switch to next project if found
+    if (nextProject) {
+      rush.activeProjectId = nextProject.id;
+      nextProject.waitingSince = undefined;
+
+      // Start current task of next project if not started
+      const nextProjectTask = nextProject.tasks[nextProject.currentStepIndex];
+      if (nextProjectTask && nextProjectTask.status === 'pending') {
+        nextProjectTask.status = 'in_progress';
+        nextProjectTask.startedAt = now;
+      }
+    }
+
+    // Check if all projects are done
+    const allCompleted = rush.projects.every(p =>
+      p.tasks.every(t => t.status === 'completed' || t.status === 'skipped')
+    );
+    if (allCompleted) {
+      rush.status = 'completed';
+      rush.completedAt = now;
     }
   }
 
