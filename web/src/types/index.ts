@@ -95,6 +95,7 @@ export interface RushProjectTask {
   startedAt?: string;
   completedAt?: string;
   timeSpent: number; // Time spent in seconds
+  notes?: string; // Notes for this task
 }
 
 export interface RushProject {
@@ -105,6 +106,8 @@ export interface RushProject {
   tasks: RushProjectTask[];
   totalTimeSpent: number; // Total time in seconds
   waitingSince?: string; // When project started waiting
+  isBlinking?: boolean; // Should this project tab blink
+  blinkingStopped?: boolean; // User manually stopped blinking
   createdAt: string;
 }
 

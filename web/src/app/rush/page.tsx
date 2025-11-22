@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2 } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Rush, RushProject, RushWorkflowStep, RushStats } from '@/types';
 import * as rushStorage from '@/lib/rush-storage';
@@ -58,7 +58,7 @@ export default function RushPage() {
 
   const handleCompleteTask = () => {
     if (!activeRush?.activeProjectId) return;
-    const updated = rushStorage.completeTask(activeRush.id, activeRush.activeProjectId);
+    const updated = rushStorage.completeTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
     if (updated) {
       setActiveRush(updated);
       setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
@@ -68,11 +68,38 @@ export default function RushPage() {
 
   const handleSkipTask = () => {
     if (!activeRush?.activeProjectId) return;
-    const updated = rushStorage.skipTask(activeRush.id, activeRush.activeProjectId);
+    const updated = rushStorage.skipTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
     if (updated) {
       setActiveRush(updated);
       setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
       setCurrentTime(0);
+    }
+  };
+
+  const handleStopBlinking = (projectId: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.stopProjectBlinking(activeRush.id, projectId);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
+  const handleUpdateNotes = (taskIndex: number, notes: string) => {
+    if (!activeRush?.activeProjectId) return;
+    const updated = rushStorage.updateTaskNotes(activeRush.id, activeRush.activeProjectId, taskIndex, notes);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
+  const handleInsertTask = (afterIndex: number, title: string, timeLimit?: number) => {
+    if (!activeRush) return;
+    const updated = rushStorage.insertWorkflowStep(activeRush.id, afterIndex, { title, timeLimit });
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
     }
   };
 
@@ -169,6 +196,9 @@ export default function RushPage() {
           onCompleteTask={handleCompleteTask}
           onSkipTask={handleSkipTask}
           onTogglePause={handleTogglePause}
+          onStopBlinking={handleStopBlinking}
+          onUpdateNotes={handleUpdateNotes}
+          onInsertTask={handleInsertTask}
         />
       ) : (
         <div className="text-center py-20">
@@ -211,6 +241,9 @@ function RushBoard({
   onCompleteTask,
   onSkipTask,
   onTogglePause,
+  onStopBlinking,
+  onUpdateNotes,
+  onInsertTask,
 }: {
   rush: Rush;
   currentTime: number;
@@ -218,9 +251,19 @@ function RushBoard({
   onCompleteTask: () => void;
   onSkipTask: () => void;
   onTogglePause: () => void;
+  onStopBlinking: (projectId: string) => void;
+  onUpdateNotes: (taskIndex: number, notes: string) => void;
+  onInsertTask: (afterIndex: number, title: string, timeLimit?: number) => void;
 }) {
+  const [showInsertModal, setShowInsertModal] = useState<number | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskTimeLimit, setNewTaskTimeLimit] = useState<number>(10);
+  const [editingNotes, setEditingNotes] = useState<number | null>(null);
+  const [notesText, setNotesText] = useState('');
+
   const activeProject = rush.projects.find(p => p.id === rush.activeProjectId);
   const currentStep = activeProject ? rush.workflow[activeProject.currentStepIndex] : null;
+  const currentTask = activeProject ? activeProject.tasks[activeProject.currentStepIndex] : null;
   const timeLimit = currentStep?.timeLimit ? currentStep.timeLimit * 60 : null;
   const isOverTime = timeLimit && currentTime > timeLimit;
   const isWarning = timeLimit && currentTime > timeLimit * 0.8 && currentTime <= timeLimit;
@@ -294,60 +337,63 @@ function RushBoard({
         {rush.projects.map((project) => {
           const isActive = project.id === rush.activeProjectId;
           const isCompleted = project.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
-          const waitingTime = rushStorage.getWaitingTime(project);
+          const isBlinking = project.isBlinking && !project.blinkingStopped && !isActive && !isCompleted;
           const progress = Math.round(
             (project.tasks.filter(t => t.status === 'completed' || t.status === 'skipped').length / project.tasks.length) * 100
           );
 
           return (
-            <button
+            <div
               key={project.id}
-              onClick={() => onActivateProject(project.id)}
               className={cn(
                 'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2',
                 isActive
                   ? 'bg-orange-50 border-orange-500 shadow-lg shadow-orange-500/20'
                   : isCompleted
                   ? 'bg-green-50 border-green-300'
-                  : waitingTime > 300
-                  ? 'bg-red-50 border-red-300 animate-pulse'
-                  : waitingTime > 180
-                  ? 'bg-orange-50 border-orange-300'
+                  : isBlinking
+                  ? 'bg-yellow-50 border-yellow-400 animate-pulse'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               )}
             >
-              {/* Waiting indicator */}
-              {!isActive && waitingTime > 0 && !isCompleted && (
-                <div className={cn(
-                  'absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-xs font-medium',
-                  waitingTime > 300 ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'
-                )}>
-                  {Math.floor(waitingTime / 60)}min
-                </div>
+              {/* Blinking indicator with stop button */}
+              {isBlinking && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onStopBlinking(project.id); }}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                  title="Arreter le clignotement"
+                >
+                  <StopCircle className="w-4 h-4" />
+                </button>
               )}
 
-              <span className={cn(
-                'font-medium text-sm',
-                isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
-              )}>
-                {project.name}
-              </span>
+              <button
+                onClick={() => onActivateProject(project.id)}
+                className="flex flex-col items-center w-full"
+              >
+                <span className={cn(
+                  'font-medium text-sm',
+                  isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : isBlinking ? 'text-yellow-700' : 'text-gray-700'
+                )}>
+                  {project.name}
+                </span>
 
-              {/* Mini progress bar */}
-              <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full transition-all',
-                    isCompleted ? 'bg-green-500' : 'bg-orange-500'
-                  )}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+                {/* Mini progress bar */}
+                <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full transition-all',
+                      isCompleted ? 'bg-green-500' : isBlinking ? 'bg-yellow-500' : 'bg-orange-500'
+                    )}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
 
-              <span className="text-xs text-gray-500 mt-1">
-                {project.currentStepIndex + 1}/{project.tasks.length}
-              </span>
-            </button>
+                <span className="text-xs text-gray-500 mt-1">
+                  {project.currentStepIndex + 1}/{project.tasks.length}
+                </span>
+              </button>
+            </div>
           );
         })}
       </div>
@@ -368,69 +414,189 @@ function RushBoard({
               const isSkipped = task.status === 'skipped';
 
               return (
-                <div
-                  key={step.id}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg transition-all',
-                    isCurrentTask
-                      ? 'bg-orange-50 border-2 border-orange-300'
-                      : isCompleted
-                      ? 'bg-green-50'
-                      : isSkipped
-                      ? 'bg-gray-50 opacity-50'
-                      : 'bg-gray-50'
-                  )}
-                >
-                  {/* Status indicator */}
-                  <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                    isCurrentTask
-                      ? 'bg-orange-500 text-white animate-pulse'
-                      : isCompleted
-                      ? 'bg-green-500 text-white'
-                      : isSkipped
-                      ? 'bg-gray-400 text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  )}>
-                    {isCompleted ? (
-                      <Check className="w-4 h-4" />
-                    ) : isSkipped ? (
-                      <SkipForward className="w-4 h-4" />
-                    ) : (
-                      <span className="text-sm font-medium">{index + 1}</span>
+                <div key={step.id}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg transition-all',
+                      isCurrentTask
+                        ? 'bg-orange-50 border-2 border-orange-300'
+                        : isCompleted
+                        ? 'bg-green-50'
+                        : isSkipped
+                        ? 'bg-gray-50 opacity-50'
+                        : 'bg-gray-50'
                     )}
-                  </div>
-
-                  {/* Task info */}
-                  <div className="flex-1">
+                  >
+                    {/* Status indicator */}
                     <div className={cn(
-                      'font-medium',
-                      isCurrentTask ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
+                      'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                      isCurrentTask
+                        ? 'bg-orange-500 text-white animate-pulse'
+                        : isCompleted
+                        ? 'bg-green-500 text-white'
+                        : isSkipped
+                        ? 'bg-gray-400 text-white'
+                        : 'bg-gray-200 text-gray-500'
                     )}>
-                      {step.title}
+                      {isCompleted ? (
+                        <Check className="w-4 h-4" />
+                      ) : isSkipped ? (
+                        <SkipForward className="w-4 h-4" />
+                      ) : (
+                        <span className="text-sm font-medium">{index + 1}</span>
+                      )}
                     </div>
-                    {step.timeLimit && (
-                      <div className="text-xs text-gray-500">
-                        Limite: {step.timeLimit} min
+
+                    {/* Task info */}
+                    <div className="flex-1">
+                      <div className={cn(
+                        'font-medium',
+                        isCurrentTask ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
+                      )}>
+                        {step.title}
+                      </div>
+                      {step.timeLimit && (
+                        <div className="text-xs text-gray-500">
+                          Limite: {step.timeLimit} min
+                        </div>
+                      )}
+                      {/* Show notes if exists */}
+                      {task.notes && (
+                        <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                          <FileText className="w-3 h-3" />
+                          {task.notes.length > 50 ? task.notes.substring(0, 50) + '...' : task.notes}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notes button for current task */}
+                    {isCurrentTask && (
+                      <button
+                        onClick={() => {
+                          setEditingNotes(index);
+                          setNotesText(task.notes || '');
+                        }}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Ajouter une note"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {/* Time spent */}
+                    {(isCompleted || isCurrentTask) && (
+                      <div className={cn(
+                        'text-sm font-mono',
+                        isCurrentTask ? 'text-orange-600' : 'text-gray-500'
+                      )}>
+                        {isCurrentTask
+                          ? rushStorage.formatTime(currentTime)
+                          : rushStorage.formatTime(task.timeSpent)}
                       </div>
                     )}
                   </div>
 
-                  {/* Time spent */}
-                  {(isCompleted || isCurrentTask) && (
-                    <div className={cn(
-                      'text-sm font-mono',
-                      isCurrentTask ? 'text-orange-600' : 'text-gray-500'
-                    )}>
-                      {isCurrentTask
-                        ? rushStorage.formatTime(currentTime)
-                        : rushStorage.formatTime(task.timeSpent)}
-                    </div>
-                  )}
+                  {/* Insert task button */}
+                  <div className="flex justify-center my-1">
+                    <button
+                      onClick={() => setShowInsertModal(index)}
+                      className="text-xs text-gray-400 hover:text-orange-500 flex items-center gap-1 transition-colors"
+                    >
+                      <PlusCircle className="w-3 h-3" />
+                      Inserer une tache
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
+
+          {/* Notes editing modal */}
+          {editingNotes !== null && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl w-full max-w-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Notes pour cette tache</h3>
+                <textarea
+                  value={notesText}
+                  onChange={(e) => setNotesText(e.target.value)}
+                  placeholder="Ajouter des notes, observations, problemes..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setEditingNotes(null)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateNotes(editingNotes, notesText);
+                      setEditingNotes(null);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Insert task modal */}
+          {showInsertModal !== null && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl w-full max-w-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Inserer une nouvelle tache</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la tache</label>
+                    <input
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder="Ex: Revue de code"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Limite de temps (min)</label>
+                    <input
+                      type="number"
+                      value={newTaskTimeLimit}
+                      onChange={(e) => setNewTaskTimeLimit(parseInt(e.target.value) || 0)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end mt-6">
+                  <button
+                    onClick={() => { setShowInsertModal(null); setNewTaskTitle(''); }}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (newTaskTitle.trim()) {
+                        onInsertTask(showInsertModal, newTaskTitle.trim(), newTaskTimeLimit || undefined);
+                        setShowInsertModal(null);
+                        setNewTaskTitle('');
+                        setNewTaskTimeLimit(10);
+                      }
+                    }}
+                    disabled={!newTaskTitle.trim()}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    Inserer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Project total time */}
           <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">

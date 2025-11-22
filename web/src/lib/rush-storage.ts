@@ -303,3 +303,203 @@ export function formatTime(seconds: number): string {
   }
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+// Set blinking state for a project
+export function setProjectBlinking(rushId: string, projectId: string, isBlinking: boolean): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (project) {
+    project.isBlinking = isBlinking;
+    if (isBlinking) {
+      project.blinkingStopped = false;
+    }
+  }
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Stop blinking for a project (user manually stopped it)
+export function stopProjectBlinking(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (project) {
+    project.isBlinking = false;
+    project.blinkingStopped = true;
+  }
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Update notes for a task
+export function updateTaskNotes(rushId: string, projectId: string, taskIndex: number, notes: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (!project) return null;
+
+  const task = project.tasks[taskIndex];
+  if (task) {
+    task.notes = notes;
+  }
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Insert a new workflow step at a specific position
+export function insertWorkflowStep(
+  rushId: string,
+  afterIndex: number,
+  stepData: { title: string; timeLimit?: number }
+): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const now = new Date().toISOString();
+  const newStepId = generateId();
+
+  // Create new workflow step
+  const newStep: RushWorkflowStep = {
+    id: newStepId,
+    title: stepData.title,
+    order: afterIndex + 2,
+    timeLimit: stepData.timeLimit,
+  };
+
+  // Insert into workflow
+  rush.workflow.splice(afterIndex + 1, 0, newStep);
+
+  // Update order for all steps after
+  rush.workflow.forEach((step, i) => {
+    step.order = i + 1;
+  });
+
+  // Add new task to each project at the same position
+  rush.projects.forEach(project => {
+    const newTask = {
+      stepId: newStepId,
+      status: 'pending' as RushTaskStatus,
+      timeSpent: 0,
+    };
+    project.tasks.splice(afterIndex + 1, 0, newTask);
+
+    // Adjust currentStepIndex if needed
+    if (project.currentStepIndex > afterIndex) {
+      project.currentStepIndex++;
+    }
+  });
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}
+
+// Complete task and trigger blinking on next project
+export function completeTaskWithBlinking(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const projectIndex = rush.projects.findIndex(p => p.id === projectId);
+  const project = rush.projects[projectIndex];
+  if (!project) return null;
+
+  const now = new Date().toISOString();
+  const currentTask = project.tasks[project.currentStepIndex];
+
+  if (currentTask) {
+    currentTask.status = 'completed';
+    currentTask.completedAt = now;
+
+    // Calculate time spent
+    if (currentTask.startedAt) {
+      const elapsed = Math.floor((new Date(now).getTime() - new Date(currentTask.startedAt).getTime()) / 1000);
+      currentTask.timeSpent = elapsed;
+      project.totalTimeSpent += elapsed;
+      rush.totalTimeSpent += elapsed;
+    }
+
+    // Move to next task in current project
+    if (project.currentStepIndex < project.tasks.length - 1) {
+      project.currentStepIndex++;
+      const nextTask = project.tasks[project.currentStepIndex];
+      nextTask.status = 'in_progress';
+      nextTask.startedAt = now;
+    }
+
+    // Trigger blinking on next project (if exists and not completed)
+    const nextProjectIndex = projectIndex + 1;
+    if (nextProjectIndex < rush.projects.length) {
+      const nextProject = rush.projects[nextProjectIndex];
+      const isNextCompleted = nextProject.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
+      if (!isNextCompleted && !nextProject.blinkingStopped) {
+        nextProject.isBlinking = true;
+      }
+    }
+
+    // Check if all projects are done
+    const allCompleted = rush.projects.every(p =>
+      p.tasks.every(t => t.status === 'completed' || t.status === 'skipped')
+    );
+    if (allCompleted) {
+      rush.status = 'completed';
+      rush.completedAt = now;
+    }
+  }
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}
+
+// Skip task with blinking cascade
+export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const projectIndex = rush.projects.findIndex(p => p.id === projectId);
+  const project = rush.projects[projectIndex];
+  if (!project) return null;
+
+  const now = new Date().toISOString();
+  const currentTask = project.tasks[project.currentStepIndex];
+
+  if (currentTask) {
+    currentTask.status = 'skipped';
+    currentTask.completedAt = now;
+
+    // Move to next task
+    if (project.currentStepIndex < project.tasks.length - 1) {
+      project.currentStepIndex++;
+      const nextTask = project.tasks[project.currentStepIndex];
+      nextTask.status = 'in_progress';
+      nextTask.startedAt = now;
+    }
+
+    // Keep current project blinking (skipped means it still needs attention)
+    project.isBlinking = true;
+
+    // Also trigger blinking on next project
+    const nextProjectIndex = projectIndex + 1;
+    if (nextProjectIndex < rush.projects.length) {
+      const nextProject = rush.projects[nextProjectIndex];
+      const isNextCompleted = nextProject.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
+      if (!isNextCompleted && !nextProject.blinkingStopped) {
+        nextProject.isBlinking = true;
+      }
+    }
+  }
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}
