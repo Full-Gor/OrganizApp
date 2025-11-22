@@ -413,10 +413,17 @@ function RushTab({
   // Get color classes based on rush color
   const getColorClasses = () => {
     if (shouldBlink) {
-      // Blink between red and white
+      // Blink between the rush's color and white
+      const colorConfig = rushStorage.RUSH_COLORS.find(c => c.value === rush.color);
+      if (colorConfig) {
+        return blinkState
+          ? `${colorConfig.bg} border-2 ${colorConfig.border} ${colorConfig.text}`
+          : `bg-white border-2 ${colorConfig.border} ${colorConfig.text === 'text-white' ? 'text-gray-700' : colorConfig.text}`;
+      }
+      // Default to orange if no color set
       return blinkState
-        ? 'bg-red-500 border-2 border-red-500 text-white'
-        : 'bg-white border-2 border-red-500 text-red-600';
+        ? 'bg-orange-500 border-2 border-orange-500 text-white'
+        : 'bg-white border-2 border-orange-500 text-orange-600';
     }
     if (isActive) {
       const colorConfig = rushStorage.RUSH_COLORS.find(c => c.value === rush.color);
