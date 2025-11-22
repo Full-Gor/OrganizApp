@@ -58,22 +58,47 @@ export default function RushPage() {
   };
 
   const handleCompleteTask = () => {
-    if (!activeRush?.activeProjectId) return;
+    console.log('=== handleCompleteTask called ===');
+    console.log('activeRush:', activeRush);
+    console.log('activeProjectId:', activeRush?.activeProjectId);
+    if (!activeRush?.activeProjectId) {
+      console.log('EARLY RETURN: no activeRush or activeProjectId');
+      return;
+    }
+    console.log('Calling completeTaskWithBlinking...');
     const updated = rushStorage.completeTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
+    console.log('Result from completeTaskWithBlinking:', updated);
     if (updated) {
+      console.log('Updating state with new rush data');
+      console.log('Projects blinking status:', updated.projects.map(p => ({ name: p.name, isBlinking: p.isBlinking })));
       setActiveRush(updated);
       setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
       setCurrentTime(0);
+    } else {
+      console.log('ERROR: updated is null/undefined');
     }
   };
 
   const handleSkipTask = () => {
-    if (!activeRush?.activeProjectId) return;
+    console.log('=== handleSkipTask called ===');
+    console.log('activeRush:', activeRush);
+    console.log('activeProjectId:', activeRush?.activeProjectId);
+    if (!activeRush?.activeProjectId) {
+      console.log('EARLY RETURN: no activeRush or activeProjectId');
+      return;
+    }
+    console.log('Calling skipTaskWithBlinking...');
     const updated = rushStorage.skipTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
+    console.log('Result from skipTaskWithBlinking:', updated);
     if (updated) {
+      console.log('Updating state with new rush data');
+      console.log('Projects blinking status:', updated.projects.map(p => ({ name: p.name, isBlinking: p.isBlinking })));
+      console.log('New activeProjectId:', updated.activeProjectId);
       setActiveRush(updated);
       setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
       setCurrentTime(0);
+    } else {
+      console.log('ERROR: updated is null/undefined');
     }
   };
 
