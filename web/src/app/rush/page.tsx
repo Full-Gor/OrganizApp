@@ -304,10 +304,11 @@ function RushBoard({
             </button>
             <button
               onClick={onSkipTask}
-              className="p-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
               title="Passer cette tache"
             >
               <SkipForward className="w-5 h-5" />
+              Passer
             </button>
             <button
               onClick={onCompleteTask}
@@ -331,6 +332,16 @@ function RushBoard({
             />
           </div>
         )}
+      </div>
+
+      {/* DEBUG: Blinking status indicator */}
+      <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 text-sm">
+        <strong>Debug Blinking:</strong>{' '}
+        {rush.projects.map((p, i) => (
+          <span key={p.id} className={p.isBlinking ? 'text-red-600 font-bold' : 'text-gray-500'}>
+            {p.name}: {p.isBlinking ? 'OUI' : 'non'}{i < rush.projects.length - 1 ? ' | ' : ''}
+          </span>
+        ))}
       </div>
 
       {/* Project Tabs */}
@@ -366,6 +377,13 @@ function RushBoard({
                 >
                   <StopCircle className="w-4 h-4" />
                 </button>
+              )}
+
+              {/* Debug: Show blinking state */}
+              {project.isBlinking && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 bg-red-600 text-white text-[8px] rounded">
+                  BLINK
+                </div>
               )}
 
               <button

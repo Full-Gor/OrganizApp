@@ -133,6 +133,8 @@ export function activateProject(rushId: string, projectId: string): Rush | null 
   const project = rush.projects.find(p => p.id === projectId);
   if (project) {
     project.waitingSince = undefined;
+    // Clear blinking when project is activated (user acknowledged notification)
+    project.isBlinking = false;
 
     // Start current task if not started
     const currentTask = project.tasks[project.currentStepIndex];
