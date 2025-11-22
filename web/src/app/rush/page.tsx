@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Rush, RushProject, RushWorkflowStep, RushStats } from '@/types';
 import * as rushStorage from '@/lib/rush-storage';
@@ -104,6 +104,16 @@ export default function RushPage() {
     }
   };
 
+  const handleResetProject = (projectId: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.resetProjectTasks(activeRush.id, projectId);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+      setCurrentTime(0);
+    }
+  };
+
   const handleTogglePause = () => {
     if (!activeRush) return;
     const updated = rushStorage.toggleRushPause(activeRush.id);
@@ -200,6 +210,7 @@ export default function RushPage() {
           onStopBlinking={handleStopBlinking}
           onUpdateNotes={handleUpdateNotes}
           onInsertTask={handleInsertTask}
+          onResetProject={handleResetProject}
         />
       ) : (
         <div className="text-center py-20">
@@ -245,6 +256,7 @@ function RushBoard({
   onStopBlinking,
   onUpdateNotes,
   onInsertTask,
+  onResetProject,
 }: {
   rush: Rush;
   currentTime: number;
@@ -255,6 +267,7 @@ function RushBoard({
   onStopBlinking: (projectId: string) => void;
   onUpdateNotes: (taskIndex: number, notes: string) => void;
   onInsertTask: (afterIndex: number, title: string, timeLimit?: number) => void;
+  onResetProject: (projectId: string) => void;
 }) {
   const [showInsertModal, setShowInsertModal] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -420,10 +433,20 @@ function RushBoard({
       {/* Active Project Tasks */}
       {activeProject && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            {activeProject.name}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              {activeProject.name}
+            </h3>
+            <button
+              onClick={() => onResetProject(activeProject.id)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              title="Remettre les taches a zero"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Reset
+            </button>
+          </div>
 
           <div className="space-y-2">
             {rush.workflow.map((step, index) => {

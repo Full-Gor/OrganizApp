@@ -538,3 +538,46 @@ export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | 
   saveRush(rush);
   return rush;
 }
+
+// Reset all tasks in a project to pending state
+export function resetProjectTasks(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (!project) return null;
+
+  const now = new Date().toISOString();
+
+  // Reset all tasks to pending
+  project.tasks.forEach(task => {
+    task.status = 'pending';
+    task.startedAt = undefined;
+    task.completedAt = undefined;
+    task.timeSpent = 0;
+    // Keep notes - user might want them
+  });
+
+  // Reset project state
+  project.currentStepIndex = 0;
+  project.totalTimeSpent = 0;
+  project.isBlinking = false;
+  project.blinkingStopped = false;
+
+  // Start first task
+  const firstTask = project.tasks[0];
+  if (firstTask) {
+    firstTask.status = 'in_progress';
+    firstTask.startedAt = now;
+  }
+
+  // Update rush status if it was completed
+  if (rush.status === 'completed') {
+    rush.status = 'active';
+    rush.completedAt = undefined;
+  }
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}
