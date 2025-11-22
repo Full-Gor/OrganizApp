@@ -72,7 +72,7 @@ export default function RushPage() {
 
       // First look after current index
       for (let i = currentRushIndex + 1; i < rushes.length; i++) {
-        if (rushes[i].status !== 'completed' && !rushes[i].blinkingStopped && rushes[i].id !== activeRush.id) {
+        if (rushes[i].status !== 'completed' && rushes[i].id !== activeRush.id) {
           nextRush = rushes[i];
           break;
         }
@@ -81,7 +81,7 @@ export default function RushPage() {
       // Wrap around: look from beginning up to current index
       if (!nextRush) {
         for (let i = 0; i < currentRushIndex; i++) {
-          if (rushes[i].status !== 'completed' && !rushes[i].blinkingStopped && rushes[i].id !== activeRush.id) {
+          if (rushes[i].status !== 'completed' && rushes[i].id !== activeRush.id) {
             nextRush = rushes[i];
             break;
           }
