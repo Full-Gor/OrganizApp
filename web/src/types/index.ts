@@ -111,7 +111,7 @@ export interface RushProject {
   createdAt: string;
 }
 
-export type RushColor = 'blue' | 'red' | 'orange' | 'green';
+export type RushColor = 'gray' | 'blue' | 'red' | 'orange' | 'violet' | 'green' | 'cyan' | 'pink' | 'yellow';
 
 export interface Rush {
   id: string;
