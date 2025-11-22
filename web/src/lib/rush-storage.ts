@@ -671,3 +671,80 @@ export function resetProjectTasks(rushId: string, projectId: string): Rush | nul
   saveRush(rush);
   return rush;
 }
+
+// Delete a workflow step and its tasks from all projects
+export function deleteWorkflowStep(rushId: string, stepIndex: number): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  // Can't delete if only one step remains
+  if (rush.workflow.length <= 1) return null;
+
+  const now = new Date().toISOString();
+
+  // Remove step from workflow
+  rush.workflow.splice(stepIndex, 1);
+
+  // Update order for remaining steps
+  rush.workflow.forEach((step, i) => {
+    step.order = i + 1;
+  });
+
+  // Remove corresponding task from each project
+  rush.projects.forEach(project => {
+    project.tasks.splice(stepIndex, 1);
+
+    // Adjust currentStepIndex if needed
+    if (project.currentStepIndex >= stepIndex) {
+      project.currentStepIndex = Math.max(0, project.currentStepIndex - 1);
+    }
+    // Make sure currentStepIndex is valid
+    if (project.currentStepIndex >= project.tasks.length) {
+      project.currentStepIndex = project.tasks.length - 1;
+    }
+  });
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}
+
+// Reorder workflow steps (move step from one index to another)
+export function reorderWorkflowSteps(rushId: string, fromIndex: number, toIndex: number): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  if (fromIndex === toIndex) return rush;
+  if (fromIndex < 0 || fromIndex >= rush.workflow.length) return null;
+  if (toIndex < 0 || toIndex >= rush.workflow.length) return null;
+
+  const now = new Date().toISOString();
+
+  // Move step in workflow
+  const [movedStep] = rush.workflow.splice(fromIndex, 1);
+  rush.workflow.splice(toIndex, 0, movedStep);
+
+  // Update order for all steps
+  rush.workflow.forEach((step, i) => {
+    step.order = i + 1;
+  });
+
+  // Move corresponding task in each project
+  rush.projects.forEach(project => {
+    const [movedTask] = project.tasks.splice(fromIndex, 1);
+    project.tasks.splice(toIndex, 0, movedTask);
+
+    // Adjust currentStepIndex if needed
+    if (project.currentStepIndex === fromIndex) {
+      project.currentStepIndex = toIndex;
+    } else if (fromIndex < project.currentStepIndex && toIndex >= project.currentStepIndex) {
+      project.currentStepIndex--;
+    } else if (fromIndex > project.currentStepIndex && toIndex <= project.currentStepIndex) {
+      project.currentStepIndex++;
+    }
+  });
+
+  rush.updatedAt = now;
+  saveRush(rush);
+  return rush;
+}

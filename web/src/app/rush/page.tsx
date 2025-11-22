@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Rush, RushProject, RushWorkflowStep, RushStats } from '@/types';
 import * as rushStorage from '@/lib/rush-storage';
@@ -176,6 +176,24 @@ export default function RushPage() {
     }
   };
 
+  const handleDeleteTask = (stepIndex: number) => {
+    if (!activeRush) return;
+    const updated = rushStorage.deleteWorkflowStep(activeRush.id, stepIndex);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
+  const handleReorderTasks = (fromIndex: number, toIndex: number) => {
+    if (!activeRush) return;
+    const updated = rushStorage.reorderWorkflowSteps(activeRush.id, fromIndex, toIndex);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
   const handleTogglePause = () => {
     if (!activeRush) return;
     const updated = rushStorage.toggleRushPause(activeRush.id);
@@ -309,6 +327,8 @@ export default function RushPage() {
           onUpdateNotes={handleUpdateNotes}
           onInsertTask={handleInsertTask}
           onResetProject={handleResetProject}
+          onDeleteTask={handleDeleteTask}
+          onReorderTasks={handleReorderTasks}
         />
       ) : (
         <div className="text-center py-20">
@@ -355,6 +375,8 @@ function RushBoard({
   onUpdateNotes,
   onInsertTask,
   onResetProject,
+  onDeleteTask,
+  onReorderTasks,
 }: {
   rush: Rush;
   currentTime: number;
@@ -366,12 +388,16 @@ function RushBoard({
   onUpdateNotes: (taskIndex: number, notes: string) => void;
   onInsertTask: (afterIndex: number, title: string, timeLimit?: number) => void;
   onResetProject: (projectId: string) => void;
+  onDeleteTask: (stepIndex: number) => void;
+  onReorderTasks: (fromIndex: number, toIndex: number) => void;
 }) {
   const [showInsertModal, setShowInsertModal] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskTimeLimit, setNewTaskTimeLimit] = useState<number>(10);
   const [editingNotes, setEditingNotes] = useState<number | null>(null);
   const [notesText, setNotesText] = useState('');
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const activeProject = rush.projects.find(p => p.id === rush.activeProjectId);
   const currentStep = activeProject ? rush.workflow[activeProject.currentStepIndex] : null;
@@ -517,21 +543,49 @@ function RushBoard({
               const isCurrentTask = index === activeProject.currentStepIndex;
               const isCompleted = task.status === 'completed';
               const isSkipped = task.status === 'skipped';
+              const isDragging = draggedIndex === index;
+              const isDragOver = dragOverIndex === index;
 
               return (
                 <div key={step.id}>
                   <div
+                    draggable
+                    onDragStart={() => setDraggedIndex(index)}
+                    onDragEnd={() => {
+                      if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                        onReorderTasks(draggedIndex, dragOverIndex);
+                      }
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverIndex(index);
+                    }}
+                    onDragLeave={() => setDragOverIndex(null)}
+                    onTouchStart={() => setDraggedIndex(index)}
+                    onTouchEnd={() => {
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                    }}
                     className={cn(
-                      'flex items-center gap-3 p-3 rounded-lg transition-all',
+                      'flex items-center gap-2 p-3 rounded-lg transition-all',
                       isCurrentTask
                         ? 'bg-orange-50 border-2 border-orange-300'
                         : isCompleted
                         ? 'bg-green-50'
                         : isSkipped
                         ? 'bg-gray-50 opacity-50'
-                        : 'bg-gray-50'
+                        : 'bg-gray-50',
+                      isDragging && 'opacity-50 scale-95',
+                      isDragOver && 'border-2 border-dashed border-orange-400'
                     )}
                   >
+                    {/* Drag handle */}
+                    <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+
                     {/* Status indicator */}
                     <div className={cn(
                       'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
@@ -553,9 +607,9 @@ function RushBoard({
                     </div>
 
                     {/* Task info */}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className={cn(
-                        'font-medium',
+                        'font-medium truncate',
                         isCurrentTask ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
                       )}>
                         {step.title}
@@ -569,7 +623,7 @@ function RushBoard({
                       {task.notes && (
                         <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
                           <FileText className="w-3 h-3" />
-                          {task.notes.length > 50 ? task.notes.substring(0, 50) + '...' : task.notes}
+                          <span className="truncate">{task.notes.length > 30 ? task.notes.substring(0, 30) + '...' : task.notes}</span>
                         </div>
                       )}
                     </div>
@@ -598,6 +652,17 @@ function RushBoard({
                           ? rushStorage.formatTime(currentTime)
                           : rushStorage.formatTime(task.timeSpent)}
                       </div>
+                    )}
+
+                    {/* Delete button */}
+                    {rush.workflow.length > 1 && (
+                      <button
+                        onClick={() => onDeleteTask(index)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Supprimer cette tache"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
 
