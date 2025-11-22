@@ -167,6 +167,12 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
                 assistantContent += `• ${task.description}`;
               }
             }
+          } else if (data.action === 'plan_day' && result.data) {
+            // Afficher le planning avec tous les événements
+            assistantContent = result.message;
+            if (result.data.tasks && result.data.tasks.length > 0) {
+              assistantContent += `\n\n✅ ${result.data.tasks.length} événement(s) ajouté(s) au planning !`;
+            }
           }
 
           // Rafraîchir l'interface
