@@ -1,3 +1,4 @@
+// Rush Mode - Multi-project management with blinking cascade system
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
