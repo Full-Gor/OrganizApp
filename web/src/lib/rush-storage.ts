@@ -480,26 +480,20 @@ export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | 
     currentTask.status = 'skipped';
     currentTask.completedAt = now;
 
-    // Keep current project blinking (skipped means it still needs attention later)
-    project.isBlinking = true;
-    project.waitingSince = now;
+    // Find next project that is not completed (search BEFORE setting blinking)
+    let nextProject: RushProject | null = null;
 
-    // Find next project that is not completed
-    let nextProjectIndex = projectIndex + 1;
-    let nextProject = null;
-
-    // Look for the next non-completed project
-    while (nextProjectIndex < rush.projects.length) {
-      const candidate = rush.projects[nextProjectIndex];
+    // Look for the next non-completed project after current
+    for (let i = projectIndex + 1; i < rush.projects.length; i++) {
+      const candidate = rush.projects[i];
       const isCompleted = candidate.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
       if (!isCompleted) {
         nextProject = candidate;
         break;
       }
-      nextProjectIndex++;
     }
 
-    // If no next project found, wrap around to find first non-completed project
+    // Wrap around: look from beginning up to current project
     if (!nextProject) {
       for (let i = 0; i < projectIndex; i++) {
         const candidate = rush.projects[i];
@@ -511,16 +505,32 @@ export function skipTaskWithBlinking(rushId: string, projectId: string): Rush | 
       }
     }
 
-    // Switch to next project if found
-    if (nextProject) {
+    // If we found another project to switch to
+    if (nextProject && nextProject.id !== project.id) {
+      // Set current project as blinking (reminder to come back)
+      project.isBlinking = true;
+      project.waitingSince = now;
+
+      // Switch to next project
       rush.activeProjectId = nextProject.id;
       nextProject.waitingSince = undefined;
+      nextProject.isBlinking = false; // Clear blinking since we're activating it
 
       // Start current task of next project if not started
       const nextProjectTask = nextProject.tasks[nextProject.currentStepIndex];
       if (nextProjectTask && nextProjectTask.status === 'pending') {
         nextProjectTask.status = 'in_progress';
         nextProjectTask.startedAt = now;
+      }
+    } else {
+      // No other project available - just move to next task in current project
+      if (project.currentStepIndex < project.tasks.length - 1) {
+        project.currentStepIndex++;
+        const nextTask = project.tasks[project.currentStepIndex];
+        if (nextTask.status === 'pending') {
+          nextTask.status = 'in_progress';
+          nextTask.startedAt = now;
+        }
       }
     }
 
