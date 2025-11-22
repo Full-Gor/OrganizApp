@@ -58,47 +58,84 @@ export default function RushPage() {
   };
 
   const handleCompleteTask = () => {
-    console.log('=== handleCompleteTask called ===');
-    console.log('activeRush:', activeRush);
-    console.log('activeProjectId:', activeRush?.activeProjectId);
-    if (!activeRush?.activeProjectId) {
-      console.log('EARLY RETURN: no activeRush or activeProjectId');
-      return;
-    }
-    console.log('Calling completeTaskWithBlinking...');
-    const updated = rushStorage.completeTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
-    console.log('Result from completeTaskWithBlinking:', updated);
+    if (!activeRush?.activeProjectId) return;
+
+    // Complete task in current rush
+    const updated = rushStorage.completeTask(activeRush.id, activeRush.activeProjectId);
     if (updated) {
-      console.log('Updating state with new rush data');
-      console.log('Projects blinking status:', updated.projects.map(p => ({ name: p.name, isBlinking: p.isBlinking })));
+      // Find next Rush in the list to make it blink
+      const currentRushIndex = rushes.findIndex(r => r.id === activeRush.id);
+      const nextRushIndex = currentRushIndex + 1;
+
+      let updatedRushes = rushes.map(r => r.id === updated.id ? updated : r);
+
+      if (nextRushIndex < rushes.length) {
+        const nextRush = rushes[nextRushIndex];
+        // Make next Rush blink (if not completed and not stopped)
+        if (nextRush.status !== 'completed' && !nextRush.blinkingStopped) {
+          const blinkingRush = rushStorage.setRushBlinking(nextRush.id, true);
+          if (blinkingRush) {
+            updatedRushes = updatedRushes.map(r => r.id === blinkingRush.id ? blinkingRush : r);
+            console.log('[handleCompleteTask] Set blinking on next Rush:', blinkingRush.name);
+          }
+        }
+      }
+
       setActiveRush(updated);
-      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+      setRushes(updatedRushes);
       setCurrentTime(0);
-    } else {
-      console.log('ERROR: updated is null/undefined');
     }
   };
 
   const handleSkipTask = () => {
-    console.log('=== handleSkipTask called ===');
-    console.log('activeRush:', activeRush);
-    console.log('activeProjectId:', activeRush?.activeProjectId);
-    if (!activeRush?.activeProjectId) {
-      console.log('EARLY RETURN: no activeRush or activeProjectId');
-      return;
-    }
-    console.log('Calling skipTaskWithBlinking...');
-    const updated = rushStorage.skipTaskWithBlinking(activeRush.id, activeRush.activeProjectId);
-    console.log('Result from skipTaskWithBlinking:', updated);
+    if (!activeRush?.activeProjectId) return;
+
+    // Skip task in current rush
+    const updated = rushStorage.skipTask(activeRush.id, activeRush.activeProjectId);
     if (updated) {
-      console.log('Updating state with new rush data');
-      console.log('Projects blinking status:', updated.projects.map(p => ({ name: p.name, isBlinking: p.isBlinking })));
-      console.log('New activeProjectId:', updated.activeProjectId);
-      setActiveRush(updated);
-      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+      // Find next Rush to switch to
+      const currentRushIndex = rushes.findIndex(r => r.id === activeRush.id);
+      let updatedRushes = rushes.map(r => r.id === updated.id ? updated : r);
+
+      // Set current Rush as blinking (reminder to come back)
+      const currentBlinking = rushStorage.setRushBlinking(activeRush.id, true);
+      if (currentBlinking) {
+        updatedRushes = updatedRushes.map(r => r.id === currentBlinking.id ? currentBlinking : r);
+      }
+
+      // Find next non-completed Rush
+      let nextRush: Rush | null = null;
+      for (let i = currentRushIndex + 1; i < rushes.length; i++) {
+        if (rushes[i].status !== 'completed') {
+          nextRush = rushes[i];
+          break;
+        }
+      }
+      // Wrap around if needed
+      if (!nextRush) {
+        for (let i = 0; i < currentRushIndex; i++) {
+          if (rushes[i].status !== 'completed') {
+            nextRush = rushes[i];
+            break;
+          }
+        }
+      }
+
+      // Switch to next Rush if found
+      if (nextRush && nextRush.id !== activeRush.id) {
+        // Clear blinking on next Rush since we're activating it
+        const clearedRush = rushStorage.clearRushBlinking(nextRush.id);
+        if (clearedRush) {
+          updatedRushes = updatedRushes.map(r => r.id === clearedRush.id ? clearedRush : r);
+          setActiveRush(clearedRush);
+          console.log('[handleSkipTask] Switched to Rush:', clearedRush.name);
+        }
+      } else {
+        setActiveRush(currentBlinking || updated);
+      }
+
+      setRushes(updatedRushes);
       setCurrentTime(0);
-    } else {
-      console.log('ERROR: updated is null/undefined');
     }
   };
 
@@ -199,27 +236,63 @@ export default function RushPage() {
       {/* Rush selector if multiple rushes */}
       {rushes.length > 0 && (
         <div className="mb-6 flex gap-2 flex-wrap">
-          {rushes.map(rush => (
-            <button
-              key={rush.id}
-              onClick={() => setActiveRush(rush)}
-              className={cn(
-                'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
-                activeRush?.id === rush.id
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              {rush.name}
-              {rush.status === 'completed' && <Check className="w-4 h-4" />}
-              <button
-                onClick={(e) => { e.stopPropagation(); handleDeleteRush(rush.id); }}
-                className="ml-1 p-1 hover:bg-black/10 rounded"
+          {rushes.map(rush => {
+            const isActive = activeRush?.id === rush.id;
+            const isCompleted = rush.status === 'completed';
+            const shouldBlink = rush.isBlinking && !rush.blinkingStopped && !isActive && !isCompleted;
+
+            return (
+              <div
+                key={rush.id}
+                className={cn(
+                  'relative px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 cursor-pointer',
+                  isActive
+                    ? 'bg-orange-600 text-white'
+                    : shouldBlink
+                    ? 'bg-yellow-100 border-2 border-yellow-400 text-yellow-800 animate-pulse'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                )}
+                onClick={() => {
+                  // Clear blinking when selecting this Rush
+                  if (rush.isBlinking) {
+                    const cleared = rushStorage.clearRushBlinking(rush.id);
+                    if (cleared) {
+                      setRushes(prev => prev.map(r => r.id === cleared.id ? cleared : r));
+                      setActiveRush(cleared);
+                      return;
+                    }
+                  }
+                  setActiveRush(rush);
+                }}
               >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </button>
-          ))}
+                {/* Stop blinking button */}
+                {shouldBlink && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const stopped = rushStorage.stopRushBlinking(rush.id);
+                      if (stopped) {
+                        setRushes(prev => prev.map(r => r.id === stopped.id ? stopped : r));
+                      }
+                    }}
+                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                    title="Arreter le clignotement"
+                  >
+                    <StopCircle className="w-3 h-3" />
+                  </button>
+                )}
+
+                {rush.name}
+                {isCompleted && <Check className="w-4 h-4" />}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteRush(rush.id); }}
+                  className="ml-1 p-1 hover:bg-black/10 rounded"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -372,27 +445,11 @@ function RushBoard({
         )}
       </div>
 
-      {/* DEBUG: Blinking status indicator - DETAILED */}
-      <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 text-xs space-y-1">
-        <div><strong>Debug Blinking:</strong></div>
-        {rush.projects.map((p, i) => {
-          const isActive = p.id === rush.activeProjectId;
-          const isCompleted = p.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
-          const shouldBlink = p.isBlinking && !p.blinkingStopped && !isActive && !isCompleted;
-          return (
-            <div key={p.id} className={shouldBlink ? 'text-green-600 font-bold' : p.isBlinking ? 'text-orange-600' : 'text-gray-500'}>
-              {p.name}: isBlinking={p.isBlinking ? 'OUI' : 'non'}, stopped={p.blinkingStopped ? 'OUI' : 'non'}, active={isActive ? 'OUI' : 'non'}, completed={isCompleted ? 'OUI' : 'non'} → <strong>BLINK: {shouldBlink ? 'OUI' : 'NON'}</strong>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Project Tabs */}
+      {/* Project Tabs (within current Rush) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
         {rush.projects.map((project) => {
           const isActive = project.id === rush.activeProjectId;
           const isCompleted = project.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
-          const isBlinking = project.isBlinking && !project.blinkingStopped && !isActive && !isCompleted;
           const progress = Math.round(
             (project.tasks.filter(t => t.status === 'completed' || t.status === 'skipped').length / project.tasks.length) * 100
           );
@@ -401,60 +458,36 @@ function RushBoard({
             <div
               key={project.id}
               className={cn(
-                'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2',
+                'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2 cursor-pointer',
                 isActive
                   ? 'bg-orange-50 border-orange-500 shadow-lg shadow-orange-500/20'
                   : isCompleted
                   ? 'bg-green-50 border-green-300'
-                  : isBlinking
-                  ? 'bg-yellow-50 border-yellow-400 animate-pulse'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               )}
+              onClick={() => onActivateProject(project.id)}
             >
-              {/* Blinking indicator with stop button */}
-              {isBlinking && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onStopBlinking(project.id); }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                  title="Arreter le clignotement"
-                >
-                  <StopCircle className="w-4 h-4" />
-                </button>
-              )}
+              <span className={cn(
+                'font-medium text-sm',
+                isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
+              )}>
+                {project.name}
+              </span>
 
-              {/* Debug: Show blinking state */}
-              {project.isBlinking && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-1 bg-red-600 text-white text-[8px] rounded">
-                  BLINK
-                </div>
-              )}
+              {/* Mini progress bar */}
+              <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full transition-all',
+                    isCompleted ? 'bg-green-500' : 'bg-orange-500'
+                  )}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
 
-              <button
-                onClick={() => onActivateProject(project.id)}
-                className="flex flex-col items-center w-full"
-              >
-                <span className={cn(
-                  'font-medium text-sm',
-                  isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : isBlinking ? 'text-yellow-700' : 'text-gray-700'
-                )}>
-                  {project.name}
-                </span>
-
-                {/* Mini progress bar */}
-                <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className={cn(
-                      'h-full transition-all',
-                      isCompleted ? 'bg-green-500' : isBlinking ? 'bg-yellow-500' : 'bg-orange-500'
-                    )}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-
-                <span className="text-xs text-gray-500 mt-1">
-                  {project.currentStepIndex + 1}/{project.tasks.length}
-                </span>
-              </button>
+              <span className="text-xs text-gray-500 mt-1">
+                {project.currentStepIndex + 1}/{project.tasks.length}
+              </span>
             </div>
           );
         })}

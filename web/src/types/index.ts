@@ -121,6 +121,8 @@ export interface Rush {
   startedAt?: string;
   completedAt?: string;
   totalTimeSpent: number;
+  isBlinking?: boolean; // Should this Rush tab blink
+  blinkingStopped?: boolean; // User manually stopped blinking
   createdAt: string;
   updatedAt: string;
 }

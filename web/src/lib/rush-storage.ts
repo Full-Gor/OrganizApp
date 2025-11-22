@@ -340,6 +340,46 @@ export function stopProjectBlinking(rushId: string, projectId: string): Rush | n
   return rush;
 }
 
+// Set blinking state for a Rush (between rushes)
+export function setRushBlinking(rushId: string, isBlinking: boolean): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  rush.isBlinking = isBlinking;
+  if (isBlinking) {
+    rush.blinkingStopped = false;
+  }
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Stop blinking for a Rush (user manually stopped it or activated it)
+export function stopRushBlinking(rushId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  rush.isBlinking = false;
+  rush.blinkingStopped = true;
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Clear Rush blinking when activating it
+export function clearRushBlinking(rushId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  rush.isBlinking = false;
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
 // Update notes for a task
 export function updateTaskNotes(rushId: string, projectId: string, taskIndex: number, notes: string): Rush | null {
   const rush = getRush(rushId);
