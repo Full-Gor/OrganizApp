@@ -78,3 +78,56 @@ export interface AppState {
   watchItems: WatchItem[];
   notifications: Notification[];
 }
+
+// Rush Mode Types
+export type RushTaskStatus = 'pending' | 'in_progress' | 'completed' | 'skipped';
+
+export interface RushWorkflowStep {
+  id: string;
+  title: string;
+  order: number;
+  timeLimit?: number; // Time limit in minutes (optional per task)
+}
+
+export interface RushProjectTask {
+  stepId: string;
+  status: RushTaskStatus;
+  startedAt?: string;
+  completedAt?: string;
+  timeSpent: number; // Time spent in seconds
+}
+
+export interface RushProject {
+  id: string;
+  name: string;
+  repoUrl?: string;
+  currentStepIndex: number;
+  tasks: RushProjectTask[];
+  totalTimeSpent: number; // Total time in seconds
+  waitingSince?: string; // When project started waiting
+  createdAt: string;
+}
+
+export interface Rush {
+  id: string;
+  name: string;
+  workflow: RushWorkflowStep[];
+  projects: RushProject[];
+  status: 'active' | 'paused' | 'completed';
+  activeProjectId?: string;
+  startedAt?: string;
+  completedAt?: string;
+  totalTimeSpent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RushStats {
+  totalProjects: number;
+  completedProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  averageTimePerTask: number;
+  fastestProject?: { name: string; time: number };
+  slowestProject?: { name: string; time: number };
+}

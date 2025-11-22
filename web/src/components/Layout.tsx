@@ -10,6 +10,7 @@ import {
   Bell,
   Settings,
   Plus,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useStore';
@@ -20,6 +21,7 @@ import AIAssistant from './AIAssistant';
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projets', href: '/projects', icon: FolderKanban },
+  { name: 'Rush', href: '/rush', icon: Zap },
   { name: 'Calendrier', href: '/calendar', icon: Calendar },
   { name: 'Veille', href: '/watch', icon: Lightbulb },
   { name: 'Notifications', href: '/notifications', icon: Bell },
