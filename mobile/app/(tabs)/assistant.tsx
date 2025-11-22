@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '@/lib/utils';
 import { sendMessageToGroq } from '@/lib/groq';
 import { getAIContext, executeAIAction } from '@/lib/ai-actions';
@@ -22,21 +23,51 @@ interface Message {
   content: string;
 }
 
+const STORAGE_KEY = 'organizapp_ai_messages';
+const INITIAL_MESSAGE: Message = {
+  id: '1',
+  role: 'assistant',
+  content: "Bonjour ! Je suis l'assistant IA d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
+};
+
 export default function AssistantScreen() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Bonjour ! Je suis l'assistant IA d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et tâches\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Charger les messages depuis AsyncStorage au montage
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setMessages(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Error loading AI messages:', e);
+      }
+      setIsInitialized(true);
+    };
+    loadMessages();
+  }, []);
+
+  // Sauvegarder les messages quand ils changent
+  useEffect(() => {
+    if (isInitialized && messages.length > 0) {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(messages)).catch(console.error);
+    }
+  }, [messages, isInitialized]);
 
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
+  const clearConversation = async () => {
+    setMessages([INITIAL_MESSAGE]);
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([INITIAL_MESSAGE]));
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -79,6 +110,17 @@ export default function AssistantScreen() {
               const icon = t.status === 'completed' ? '✓' : t.status === 'in_progress' ? '⏳' : '○';
               assistantContent += `${icon} ${t.title}\n`;
             });
+          } else if (data.action === 'create_event' && result.data) {
+            const { task } = result.data;
+            if (task && task.dueDate) {
+              const date = new Date(task.dueDate);
+              assistantContent += `\n\n📅 Événement ajouté au planning:\n`;
+              assistantContent += `• ${task.title}\n`;
+              assistantContent += `• Date: ${date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
+              if (task.description) {
+                assistantContent += `• ${task.description}`;
+              }
+            }
           }
         } else {
           assistantContent = result.message;
@@ -106,21 +148,28 @@ export default function AssistantScreen() {
 
   const suggestions = [
     "Crée un projet pour une app",
+    "J'ai un RDV demain à 14h",
     "Mes statistiques",
-    "Liste mes tâches",
-    "Ajoute un rappel",
+    "Planifie une réunion lundi",
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerIcon}>
-          <Ionicons name="sparkles" size={24} color={colors.white} />
+        <View style={styles.headerLeft}>
+          <View style={styles.headerIcon}>
+            <Ionicons name="sparkles" size={24} color={colors.white} />
+          </View>
+          <View>
+            <Text style={styles.title}>Assistant IA</Text>
+            <Text style={styles.subtitle}>Toujours prêt à aider</Text>
+          </View>
         </View>
-        <View>
-          <Text style={styles.title}>Assistant IA</Text>
-          <Text style={styles.subtitle}>Toujours prêt à aider</Text>
-        </View>
+        {messages.length > 1 && (
+          <TouchableOpacity style={styles.clearButton} onPress={clearConversation}>
+            <Text style={styles.clearButtonText}>Effacer</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -242,11 +291,26 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 16,
-    gap: 12,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[200],
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  clearButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: colors.gray[100],
+    borderRadius: 12,
+  },
+  clearButtonText: {
+    fontSize: 13,
+    color: colors.gray[600],
   },
   headerIcon: {
     width: 44,

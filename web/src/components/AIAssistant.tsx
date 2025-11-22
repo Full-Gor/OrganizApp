@@ -12,20 +12,59 @@ interface Message {
   timestamp: Date;
 }
 
+const STORAGE_KEY = 'organizapp_ai_messages';
+const INITIAL_MESSAGE: Message = {
+  id: '1',
+  role: 'assistant',
+  content: "Bonjour ! Je suis l'assistant IA d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
+  timestamp: new Date(),
+};
+
+function loadMessages(): Message[] {
+  if (typeof window === 'undefined') return [INITIAL_MESSAGE];
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    }
+  } catch (e) {
+    console.error('Error loading AI messages:', e);
+  }
+  return [INITIAL_MESSAGE];
+}
+
+function saveMessages(messages: Message[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Error saving AI messages:', e);
+  }
+}
+
 export default function AIAssistant({ onAction }: { onAction?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Bonjour ! Je suis l'assistant IA d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Charger les messages depuis localStorage au montage
+  useEffect(() => {
+    const loaded = loadMessages();
+    setMessages(loaded);
+    setIsInitialized(true);
+  }, []);
+
+  // Sauvegarder les messages quand ils changent
+  useEffect(() => {
+    if (isInitialized && messages.length > 0) {
+      saveMessages(messages);
+    }
+  }, [messages, isInitialized]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -117,6 +156,17 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
             if (projects.length === 0 && tasks.length === 0 && watchItems.length === 0) {
               assistantContent += `Aucun résultat trouvé.`;
             }
+          } else if (data.action === 'create_event' && result.data) {
+            const { task } = result.data;
+            if (task && task.dueDate) {
+              const date = new Date(task.dueDate);
+              assistantContent += `\n\n📅 **Événement ajouté au planning:**\n`;
+              assistantContent += `• ${task.title}\n`;
+              assistantContent += `• Date: ${date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
+              if (task.description) {
+                assistantContent += `• ${task.description}`;
+              }
+            }
           }
 
           // Rafraîchir l'interface
@@ -147,11 +197,16 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
     }
   };
 
+  const clearConversation = () => {
+    setMessages([INITIAL_MESSAGE]);
+    saveMessages([INITIAL_MESSAGE]);
+  };
+
   const suggestions = [
     "Crée un projet pour une app mobile",
+    "J'ai un RDV demain à 14h",
     "Quelles sont mes statistiques ?",
-    "Liste mes tâches en cours",
-    "Ajoute un rappel pour demain",
+    "Planifie une réunion lundi",
   ];
 
   return (
@@ -183,12 +238,23 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
                 <p className="text-xs text-white/80">Toujours prêt à aider</p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {messages.length > 1 && (
+                <button
+                  onClick={clearConversation}
+                  className="p-1 hover:bg-white/20 rounded-lg transition-colors text-xs px-2"
+                  title="Effacer la conversation"
+                >
+                  Effacer
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}

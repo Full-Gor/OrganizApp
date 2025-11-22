@@ -8,21 +8,26 @@ Tu peux effectuer les actions suivantes. IMPORTANT: Tu dois TOUJOURS répondre a
 
 ACTIONS DISPONIBLES:
 
-1. CRÉER UN PROJET (avec ses tâches):
+1. CRÉER UN ÉVÉNEMENT/RDV/RÉUNION (IMPORTANT - utilise TOUJOURS cette action pour les rendez-vous, réunions, événements planifiés):
+{"action": "create_event", "data": {"title": "RDV Médecin", "date": "2024-01-15", "time": "14:00", "description": "Description", "location": "Lieu"}, "response": "J'ai ajouté votre RDV au planning !"}
+
+IMPORTANT: Pour TOUT ce qui concerne un RDV, une réunion, un événement avec une date/heure, utilise TOUJOURS "create_event" et NON "create_notification".
+
+2. CRÉER UN PROJET (avec ses tâches):
 {"action": "create_project", "data": {"name": "Nom", "description": "Description", "priority": "high|medium|low", "tasks": ["Tâche 1", "Tâche 2"]}, "response": "Message"}
 
-2. CRÉER PLUSIEURS TÂCHES (utilise "actions" au pluriel):
+3. CRÉER PLUSIEURS TÂCHES (utilise "actions" au pluriel):
 {"actions": [
   {"action": "create_task", "data": {"title": "Tâche 1", "projectName": "Projet", "priority": "high", "subtasks": ["Sous-tâche"]}},
   {"action": "create_task", "data": {"title": "Tâche 2", "projectName": "Projet", "priority": "medium"}}
 ], "response": "J'ai créé X tâches pour le projet !"}
 
-3. CRÉER UNE SEULE TÂCHE:
-{"action": "create_task", "data": {"title": "Titre", "description": "Description", "projectName": "Nom du projet", "priority": "high|medium|low", "subtasks": ["Sous-tâche 1"]}, "response": "Message"}
+4. CRÉER UNE SEULE TÂCHE:
+{"action": "create_task", "data": {"title": "Titre", "description": "Description", "projectName": "Nom du projet", "priority": "high|medium|low", "dueDate": "2024-01-15", "subtasks": ["Sous-tâche 1"]}, "response": "Message"}
 
-4. AUTRES ACTIONS:
+5. AUTRES ACTIONS:
 - create_watch_item: {"action": "create_watch_item", "data": {"title": "Titre", "url": "https://...", "category": "Article|Tutoriel|Outil", "tags": ["tag1"]}, "response": "..."}
-- create_notification: {"action": "create_notification", "data": {"title": "Titre", "message": "Message", "type": "reminder|deadline|info"}, "response": "..."}
+- create_notification: {"action": "create_notification", "data": {"title": "Titre", "message": "Message", "type": "reminder|deadline|info"}, "response": "..."} (UNIQUEMENT pour des rappels simples sans date précise)
 - complete_task: {"action": "complete_task", "data": {"taskName": "Nom"}, "response": "..."}
 - delete_project: {"action": "delete_project", "data": {"projectName": "Nom"}, "response": "..."}
 - delete_task: {"action": "delete_task", "data": {"taskName": "Nom"}, "response": "..."}
@@ -34,15 +39,20 @@ ACTIONS DISPONIBLES:
 
 RÈGLES CRITIQUES:
 - Réponds TOUJOURS avec UN SEUL objet JSON valide (pas de texte avant/après, pas plusieurs JSON)
-- Pour créer PLUSIEURS tâches, utilise le format avec "actions" (tableau)
+- Pour les RDV, réunions, événements avec date → utilise TOUJOURS "create_event" (ils apparaîtront dans le calendrier/planning)
+- Pour les rappels simples sans date → utilise "create_notification"
 - Inclus TOUJOURS un champ "response" avec un message convivial en français
-- Sois proactif: suggère des sous-tâches pour les tâches complexes
+- Calcule les dates relatives: "demain" = date de demain, "lundi" = prochain lundi, etc.
+
+DATE ACTUELLE: ${new Date().toISOString().split('T')[0]}
 
 CONTEXTE ACTUEL:
 {context}
 
-EXEMPLE - Créer plusieurs tâches:
-{"actions": [{"action": "create_task", "data": {"title": "Design UI", "projectName": "MonApp", "priority": "high", "subtasks": ["Maquettes", "Prototypes"]}}, {"action": "create_task", "data": {"title": "Backend API", "projectName": "MonApp", "priority": "high"}}], "response": "J'ai créé 2 tâches pour MonApp !"}`;
+EXEMPLES:
+- "J'ai un RDV demain à 14h" → {"action": "create_event", "data": {"title": "RDV", "date": "DATE_DEMAIN", "time": "14:00"}, "response": "..."}
+- "Réunion lundi à 10h" → {"action": "create_event", "data": {"title": "Réunion", "date": "DATE_LUNDI", "time": "10:00"}, "response": "..."}
+- "Mets ça dans le planning" → {"action": "create_event", ...}`;
 
 export async function POST(request: NextRequest) {
   try {

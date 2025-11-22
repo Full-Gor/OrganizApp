@@ -4,7 +4,7 @@ import { generateId, projectColors } from './utils';
 
 export interface AIAction {
   type: 'create_project' | 'create_task' | 'create_watch_item' | 'create_notification' |
-        'update_project' | 'update_task' | 'delete_project' | 'delete_task' |
+        'create_event' | 'update_project' | 'update_task' | 'delete_project' | 'delete_task' |
         'complete_task' | 'list_projects' | 'list_tasks' | 'get_stats' | 'search' | 'message';
   data?: any;
   message?: string;
@@ -138,6 +138,85 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
         };
         storage.saveNotification(notification);
         return { success: true, message: `Rappel "${notification.title}" créé`, data: notification };
+      }
+
+      case 'create_event': {
+        // Créer un événement = une tâche avec une date (apparaît dans le calendrier)
+        const projects = storage.getProjects();
+        let projectId = action.data.projectId;
+
+        // Chercher un projet "Planning" ou "Agenda" ou utiliser le premier projet actif
+        if (!projectId) {
+          const planningProject = projects.find(p =>
+            p.name.toLowerCase().includes('planning') ||
+            p.name.toLowerCase().includes('agenda') ||
+            p.name.toLowerCase().includes('rdv') ||
+            p.name.toLowerCase().includes('événement')
+          );
+          if (planningProject) {
+            projectId = planningProject.id;
+          } else {
+            // Créer un projet "Planning" s'il n'existe pas
+            const newProject: Project = {
+              id: generateId(),
+              name: 'Planning',
+              description: 'Événements, RDV et réunions',
+              status: 'active',
+              priority: 'high',
+              dueDate: null,
+              color: '#8B5CF6',
+              createdAt: now,
+              updatedAt: now,
+            };
+            storage.saveProject(newProject);
+            projectId = newProject.id;
+          }
+        }
+
+        // Parser la date
+        let eventDate = action.data.date || action.data.dueDate || now;
+        if (typeof eventDate === 'string' && !eventDate.includes('T')) {
+          // Si c'est juste une date sans heure, ajouter l'heure si fournie
+          if (action.data.time) {
+            eventDate = `${eventDate}T${action.data.time}:00`;
+          } else {
+            eventDate = `${eventDate}T09:00:00`;
+          }
+        }
+
+        const task: Task = {
+          id: generateId(),
+          projectId,
+          title: action.data.title || action.data.name || 'Événement',
+          description: action.data.description || `${action.data.time ? 'Heure: ' + action.data.time : ''} ${action.data.location ? '- Lieu: ' + action.data.location : ''}`.trim(),
+          priority: action.data.priority || 'high',
+          status: 'pending',
+          dueDate: eventDate,
+          subtasks: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+        storage.saveTask(task);
+
+        // Créer aussi une notification de rappel
+        const notification: Notification = {
+          id: generateId(),
+          title: `Rappel: ${task.title}`,
+          message: task.description || `Événement prévu le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
+          type: 'reminder',
+          read: false,
+          relatedId: task.id,
+          relatedType: 'task',
+          scheduledFor: eventDate,
+          createdAt: now,
+        };
+        storage.saveNotification(notification);
+
+        return {
+          success: true,
+          message: `Événement "${task.title}" ajouté au planning pour le ${new Date(eventDate).toLocaleDateString('fr-FR')}`,
+          data: { task, notification }
+        };
       }
 
       case 'complete_task': {
