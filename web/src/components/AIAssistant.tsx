@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAIContext, executeAIAction } from '@/lib/ai-actions';
 
@@ -227,7 +227,7 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
           isOpen && 'hidden'
         )}
       >
-        <Sparkles className="w-6 h-6" />
+        <span className="text-lg font-bold">IA</span>
       </button>
 
       {/* Chat Window */}

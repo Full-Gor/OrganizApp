@@ -786,13 +786,8 @@ export function renameWorkflowStep(rushId: string, stepIndex: number, newTitle: 
 
 // Color mapping for Rush tabs
 export const RUSH_COLORS: { value: RushColor; label: string; bg: string; text: string; border: string }[] = [
-  { value: 'gray', label: 'Gris', bg: 'bg-gray-600', text: 'text-white', border: 'border-gray-600' },
   { value: 'blue', label: 'Bleu', bg: 'bg-blue-500', text: 'text-white', border: 'border-blue-500' },
   { value: 'red', label: 'Rouge', bg: 'bg-red-500', text: 'text-white', border: 'border-red-500' },
   { value: 'orange', label: 'Orange', bg: 'bg-orange-500', text: 'text-white', border: 'border-orange-500' },
-  { value: 'violet', label: 'Violet', bg: 'bg-violet-500', text: 'text-white', border: 'border-violet-500' },
   { value: 'green', label: 'Vert', bg: 'bg-green-500', text: 'text-white', border: 'border-green-500' },
-  { value: 'cyan', label: 'Cyan', bg: 'bg-cyan-500', text: 'text-white', border: 'border-cyan-500' },
-  { value: 'pink', label: 'Rose', bg: 'bg-pink-500', text: 'text-white', border: 'border-pink-500' },
-  { value: 'yellow', label: 'Jaune', bg: 'bg-yellow-400', text: 'text-yellow-900', border: 'border-yellow-400' },
 ];

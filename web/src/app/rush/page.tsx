@@ -396,13 +396,28 @@ function RushTab({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(rush.name);
+  const [blinkState, setBlinkState] = useState(false);
 
   const isCompleted = rush.status === 'completed';
   const shouldBlink = rush.isBlinking && !rush.blinkingStopped && !isActive && !isCompleted;
 
+  // Fast blinking effect for shouldBlink
+  useEffect(() => {
+    if (!shouldBlink) return;
+    const interval = setInterval(() => {
+      setBlinkState(prev => !prev);
+    }, 300); // Fast blink: 300ms
+    return () => clearInterval(interval);
+  }, [shouldBlink]);
+
   // Get color classes based on rush color
   const getColorClasses = () => {
-    if (shouldBlink) return 'bg-yellow-100 border-2 border-yellow-400 text-yellow-800 animate-pulse';
+    if (shouldBlink) {
+      // Blink between red and white
+      return blinkState
+        ? 'bg-red-500 border-2 border-red-500 text-white'
+        : 'bg-white border-2 border-red-500 text-red-600';
+    }
     if (isActive) {
       const colorConfig = rushStorage.RUSH_COLORS.find(c => c.value === rush.color);
       if (colorConfig) return `${colorConfig.bg} ${colorConfig.text}`;
@@ -422,13 +437,13 @@ function RushTab({
     <div className="relative">
       <div
         className={cn(
-          'relative px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 cursor-pointer',
+          'relative px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer',
           getColorClasses()
         )}
         onClick={() => !isEditing && onSelect()}
       >
         {/* Color indicator dot */}
-        {rush.color && !isActive && (
+        {rush.color && !isActive && !shouldBlink && (
           <div className={cn(
             'w-2 h-2 rounded-full',
             rushStorage.RUSH_COLORS.find(c => c.value === rush.color)?.bg || 'bg-gray-400'
