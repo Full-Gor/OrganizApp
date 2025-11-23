@@ -7,6 +7,15 @@ const RUSH_TEMPLATES_KEY = 'organizapp_rush_templates';
 // Default workflow templates
 export const DEFAULT_WORKFLOWS: { name: string; steps: Omit<RushWorkflowStep, 'id'>[] }[] = [
   {
+    name: 'Feature Simple',
+    steps: [
+      { title: 'Feature', order: 1, timeLimit: 30 },
+      { title: 'Commit Push PR', order: 2, timeLimit: 5 },
+      { title: 'Vercel Test', order: 3, timeLimit: 10 },
+      { title: 'Correction', order: 4, timeLimit: 15 },
+    ],
+  },
+  {
     name: 'App Mobile (Expo)',
     steps: [
       { title: 'Clone repo', order: 1, timeLimit: 5 },
