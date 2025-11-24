@@ -43,12 +43,56 @@ export const DEFAULT_WORKFLOWS: { name: string; steps: Omit<RushWorkflowStep, 'i
   },
 ];
 
+// Validate a Rush object structure
+function isValidRush(rush: any): rush is Rush {
+  if (!rush || typeof rush !== 'object') return false;
+  if (typeof rush.id !== 'string' || typeof rush.name !== 'string') return false;
+  if (!Array.isArray(rush.workflow) || !Array.isArray(rush.projects)) return false;
+
+  // Validate workflow steps
+  for (const step of rush.workflow) {
+    if (!step || typeof step !== 'object') return false;
+    if (typeof step.id !== 'string' || typeof step.title !== 'string') return false;
+    // Check for corrupted data (wrong keys like taskName)
+    if ('taskName' in step || (typeof step.workflow === 'object')) return false;
+  }
+
+  // Validate projects
+  for (const project of rush.projects) {
+    if (!project || typeof project !== 'object') return false;
+    if (typeof project.id !== 'string' || typeof project.name !== 'string') return false;
+    if (!Array.isArray(project.tasks)) return false;
+  }
+
+  return true;
+}
+
 // Get all rushes
 export function getRushes(): Rush[] {
   if (typeof window === 'undefined') return [];
   try {
     const data = localStorage.getItem(RUSH_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed)) return [];
+
+    // Filter out corrupted Rush data
+    const validRushes = parsed.filter((rush: any) => {
+      const isValid = isValidRush(rush);
+      if (!isValid) {
+        console.warn('Filtered out corrupted Rush data:', rush?.name || 'unknown');
+      }
+      return isValid;
+    });
+
+    // If we filtered some out, save the cleaned data
+    if (validRushes.length !== parsed.length) {
+      console.log(`Cleaned up ${parsed.length - validRushes.length} corrupted Rush entries`);
+      localStorage.setItem(RUSH_STORAGE_KEY, JSON.stringify(validRushes));
+    }
+
+    return validRushes;
   } catch (e) {
     console.error('Error loading rushes:', e);
     return [];

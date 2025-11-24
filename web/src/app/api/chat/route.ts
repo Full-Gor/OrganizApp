@@ -30,6 +30,37 @@ IMPORTANT: Réponds TOUJOURS avec UN SEUL objet JSON valide.
 - update_event: {"action": "update_event", "data": {"eventName": "RDV", "time": "15:00"}, "response": "Décalé !"}
 - delete_event: {"action": "delete_event", "data": {"eventName": "RDV"}, "response": "Supprimé !"}
 
+== CREER DES RUSH ==
+UN Rush = gestion multi-projets avec workflow (etapes). Utilise pour travailler sur plusieurs projets en parallele.
+
+- create_rush (1 seul Rush):
+{"action": "create_rush", "data": {
+  "name": "Sprint Apps Semaine 47",
+  "projectNames": ["App Client A", "App Client B", "App Client C"]
+}, "response": "Rush cree avec 3 projets !"}
+
+- create_multiple_rushes (PLUSIEURS Rush):
+{"action": "create_multiple_rushes", "data": {
+  "rushes": [
+    {"name": "Rush 1", "projectNames": ["Projet 1"]},
+    {"name": "Rush 2", "projectNames": ["Projet 2"]},
+    {"name": "Rush 3", "projectNames": ["Projet 3"]}
+  ]
+}, "response": "3 Rush crees !"}
+
+- Avec workflow personnalise:
+{"action": "create_rush", "data": {
+  "name": "Mon Rush",
+  "projectNames": ["Projet A", "Projet B"],
+  "workflow": [
+    {"title": "Analyse", "timeLimit": 10},
+    {"title": "Dev", "timeLimit": 30},
+    {"title": "Test", "timeLimit": 15}
+  ]
+}, "response": "Rush cree avec workflow personnalise !"}
+
+- list_rushes, delete_rush
+
 == AUTRES ACTIONS ==
 - create_project, create_task, delete_task, delete_project, complete_task
 - list_projects, list_tasks, list_events, get_stats
