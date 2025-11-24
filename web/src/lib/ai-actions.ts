@@ -1,12 +1,14 @@
 import { Project, Task, WatchItem, Notification, Priority, TaskStatus, ProjectStatus } from '@/types';
 import * as storage from './storage';
+import * as rushStorage from './rush-storage';
 import { generateId, projectColors } from './utils';
 
 export interface AIAction {
   type: 'create_project' | 'create_task' | 'create_watch_item' | 'create_notification' |
         'create_event' | 'update_event' | 'delete_event' | 'update_project' | 'update_task' |
         'delete_project' | 'delete_task' | 'complete_task' | 'list_projects' | 'list_tasks' |
-        'list_events' | 'get_stats' | 'search' | 'message' | 'plan_day';
+        'list_events' | 'get_stats' | 'search' | 'message' | 'plan_day' |
+        'create_rush' | 'create_multiple_rushes' | 'list_rushes' | 'delete_rush';
   data?: any;
   message?: string;
 }
@@ -579,6 +581,112 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
           message: `Résultats pour "${action.data.query}"`,
           data: { projects, tasks, watchItems }
         };
+      }
+
+      case 'create_rush': {
+        // Create a single Rush with projects
+        const rushName = action.data.name || action.data.rushName || 'Nouveau Rush';
+        const projectNames = action.data.projectNames || action.data.projects || [];
+
+        // Get workflow - use default if not specified
+        let workflowSteps: { title: string; order: number; timeLimit?: number }[];
+
+        if (action.data.workflow && Array.isArray(action.data.workflow)) {
+          workflowSteps = action.data.workflow.map((step: any, index: number) => ({
+            title: typeof step === 'string' ? step : (step.title || step.name || `Etape ${index + 1}`),
+            order: index + 1,
+            timeLimit: step.timeLimit || step.time || undefined,
+          }));
+        } else if (action.data.templateIndex !== undefined) {
+          // Use a default template
+          const templateIdx = Math.min(action.data.templateIndex, rushStorage.DEFAULT_WORKFLOWS.length - 1);
+          workflowSteps = rushStorage.DEFAULT_WORKFLOWS[templateIdx].steps.map((s, i) => ({
+            title: s.title,
+            order: s.order ?? i + 1,
+            timeLimit: s.timeLimit,
+          }));
+        } else {
+          // Default to "Feature Simple" workflow
+          workflowSteps = rushStorage.DEFAULT_WORKFLOWS[0].steps.map((s, i) => ({
+            title: s.title,
+            order: s.order ?? i + 1,
+            timeLimit: s.timeLimit,
+          }));
+        }
+
+        if (projectNames.length === 0) {
+          return { success: false, message: "Veuillez specifier au moins un projet pour le Rush" };
+        }
+
+        const rush = rushStorage.createRush(rushName, workflowSteps, projectNames);
+        return {
+          success: true,
+          message: `Rush "${rush.name}" cree avec ${projectNames.length} projet(s)`,
+          data: rush
+        };
+      }
+
+      case 'create_multiple_rushes': {
+        // Create multiple rushes at once
+        const rushes = action.data.rushes || [];
+        if (!Array.isArray(rushes) || rushes.length === 0) {
+          return { success: false, message: "Aucun Rush a creer" };
+        }
+
+        const createdRushes: any[] = [];
+        for (const rushData of rushes) {
+          const rushName = rushData.name || rushData.rushName || 'Rush';
+          const projectNames = rushData.projectNames || rushData.projects || [rushName];
+
+          // Get workflow
+          let workflowSteps: { title: string; order: number; timeLimit?: number }[];
+          if (rushData.workflow && Array.isArray(rushData.workflow)) {
+            workflowSteps = rushData.workflow.map((step: any, index: number) => ({
+              title: typeof step === 'string' ? step : (step.title || step.name || `Etape ${index + 1}`),
+              order: index + 1,
+              timeLimit: step.timeLimit || step.time || undefined,
+            }));
+          } else {
+            // Default workflow
+            workflowSteps = rushStorage.DEFAULT_WORKFLOWS[0].steps.map((s, i) => ({
+              title: s.title,
+              order: s.order ?? i + 1,
+              timeLimit: s.timeLimit,
+            }));
+          }
+
+          const rush = rushStorage.createRush(rushName, workflowSteps, projectNames);
+          createdRushes.push(rush);
+        }
+
+        return {
+          success: true,
+          message: `${createdRushes.length} Rush cree(s) avec succes`,
+          data: createdRushes
+        };
+      }
+
+      case 'list_rushes': {
+        const rushes = rushStorage.getRushes();
+        return {
+          success: true,
+          message: `${rushes.length} Rush trouve(s)`,
+          data: rushes
+        };
+      }
+
+      case 'delete_rush': {
+        const rushes = rushStorage.getRushes();
+        const rush = rushes.find(r =>
+          r.name.toLowerCase().includes(action.data.rushName?.toLowerCase() || '') ||
+          r.id === action.data.rushId
+        );
+
+        if (rush) {
+          rushStorage.deleteRush(rush.id);
+          return { success: true, message: `Rush "${rush.name}" supprime` };
+        }
+        return { success: false, message: "Rush non trouve" };
       }
 
       case 'message':

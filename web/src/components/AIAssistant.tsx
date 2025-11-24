@@ -173,6 +173,26 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
             if (result.data.tasks && result.data.tasks.length > 0) {
               assistantContent += `\n\n✅ ${result.data.tasks.length} événement(s) ajouté(s) au planning !`;
             }
+          } else if (data.action === 'create_rush' && result.data) {
+            assistantContent += `\n\n🚀 **Rush cree:**\n`;
+            assistantContent += `• ${result.data.name}\n`;
+            assistantContent += `• ${result.data.projects?.length || 0} projet(s)\n`;
+            assistantContent += `• ${result.data.workflow?.length || 0} etape(s)`;
+          } else if (data.action === 'create_multiple_rushes' && result.data) {
+            assistantContent += `\n\n🚀 **${result.data.length} Rush cree(s):**\n`;
+            result.data.forEach((rush: any) => {
+              assistantContent += `• ${rush.name} (${rush.projects?.length || 0} projet(s))\n`;
+            });
+          } else if (data.action === 'list_rushes' && result.data) {
+            assistantContent += `\n\n🚀 **Rush:**\n`;
+            if (result.data.length === 0) {
+              assistantContent += `Aucun Rush trouve.`;
+            } else {
+              result.data.forEach((rush: any) => {
+                const statusIcon = rush.status === 'completed' ? '✓' : rush.status === 'active' ? '▶' : '⏸';
+                assistantContent += `${statusIcon} ${rush.name} (${rush.projects?.length || 0} projets)\n`;
+              });
+            }
           }
 
           // Rafraîchir l'interface
