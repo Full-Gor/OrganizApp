@@ -173,6 +173,15 @@ export default function RushPage() {
     }
   };
 
+  const handleUpdateProjectNotes = (projectId: string, notes: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.updateProjectNotes(activeRush.id, projectId, notes);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
   const handleInsertTask = (afterIndex: number, title: string, timeLimit?: number) => {
     if (!activeRush) return;
     const updated = rushStorage.insertWorkflowStep(activeRush.id, afterIndex, { title, timeLimit });
@@ -336,6 +345,7 @@ export default function RushPage() {
           onTogglePause={handleTogglePause}
           onStopBlinking={handleStopBlinking}
           onUpdateNotes={handleUpdateNotes}
+          onUpdateProjectNotes={handleUpdateProjectNotes}
           onInsertTask={handleInsertTask}
           onResetProject={handleResetProject}
           onDeleteTask={handleDeleteTask}
@@ -555,6 +565,7 @@ function RushBoard({
   onTogglePause,
   onStopBlinking,
   onUpdateNotes,
+  onUpdateProjectNotes,
   onInsertTask,
   onResetProject,
   onDeleteTask,
@@ -569,6 +580,7 @@ function RushBoard({
   onTogglePause: () => void;
   onStopBlinking: (projectId: string) => void;
   onUpdateNotes: (taskIndex: number, notes: string) => void;
+  onUpdateProjectNotes: (projectId: string, notes: string) => void;
   onInsertTask: (afterIndex: number, title: string, timeLimit?: number) => void;
   onResetProject: (projectId: string) => void;
   onDeleteTask: (stepIndex: number) => void;
@@ -580,6 +592,8 @@ function RushBoard({
   const [newTaskTimeLimit, setNewTaskTimeLimit] = useState<number>(10);
   const [editingNotes, setEditingNotes] = useState<number | null>(null);
   const [notesText, setNotesText] = useState('');
+  const [editingProjectNotes, setEditingProjectNotes] = useState<string | null>(null);
+  const [projectNotesText, setProjectNotesText] = useState('');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
@@ -670,36 +684,56 @@ function RushBoard({
             <div
               key={project.id}
               className={cn(
-                'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2 cursor-pointer',
+                'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2',
                 isActive
                   ? 'bg-orange-50 border-orange-500 shadow-lg shadow-orange-500/20'
                   : isCompleted
                   ? 'bg-green-50 border-green-300'
                   : 'bg-white border-gray-200 hover:border-gray-300'
               )}
-              onClick={() => onActivateProject(project.id)}
             >
-              <span className={cn(
-                'font-medium text-sm',
-                isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
-              )}>
-                {project.name}
-              </span>
+              {/* Notes button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingProjectNotes(project.id);
+                  setProjectNotesText(project.notes || '');
+                }}
+                className={cn(
+                  'absolute top-1 right-1 p-1 rounded hover:bg-black/10 transition-colors',
+                  project.notes ? 'text-blue-600' : 'text-gray-400'
+                )}
+                title="Notes du projet"
+              >
+                <FileText className="w-3.5 h-3.5" />
+              </button>
 
-              {/* Mini progress bar */}
-              <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full transition-all',
-                    isCompleted ? 'bg-green-500' : 'bg-orange-500'
-                  )}
-                  style={{ width: `${progress}%` }}
-                />
+              <div
+                className="w-full flex flex-col items-center cursor-pointer"
+                onClick={() => onActivateProject(project.id)}
+              >
+                <span className={cn(
+                  'font-medium text-sm',
+                  isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
+                )}>
+                  {project.name}
+                </span>
+
+                {/* Mini progress bar */}
+                <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full transition-all',
+                      isCompleted ? 'bg-green-500' : 'bg-orange-500'
+                    )}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                <span className="text-xs text-gray-500 mt-1">
+                  {project.currentStepIndex + 1}/{project.tasks.length}
+                </span>
               </div>
-
-              <span className="text-xs text-gray-500 mt-1">
-                {project.currentStepIndex + 1}/{project.tasks.length}
-              </span>
             </div>
           );
         })}
@@ -937,6 +971,40 @@ function RushBoard({
                     onClick={() => {
                       onUpdateNotes(editingNotes, notesText);
                       setEditingNotes(null);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Project notes editing modal */}
+          {editingProjectNotes !== null && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl w-full max-w-md p-6">
+                <h3 className="text-lg font-semibold mb-4">Notes pour ce projet</h3>
+                <textarea
+                  value={projectNotesText}
+                  onChange={(e) => setProjectNotesText(e.target.value)}
+                  placeholder="Ajouter des notes sur ce projet: observations, problemes, liens utiles..."
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setEditingProjectNotes(null)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdateProjectNotes(editingProjectNotes, projectNotesText);
+                      setEditingProjectNotes(null);
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >

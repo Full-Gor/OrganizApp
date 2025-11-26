@@ -451,6 +451,21 @@ export function updateTaskNotes(rushId: string, projectId: string, taskIndex: nu
   return rush;
 }
 
+// Update notes for a project
+export function updateProjectNotes(rushId: string, projectId: string, notes: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (!project) return null;
+
+  project.notes = notes;
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
 // Insert a new workflow step at a specific position
 export function insertWorkflowStep(
   rushId: string,
