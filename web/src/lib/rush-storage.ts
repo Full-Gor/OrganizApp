@@ -147,6 +147,7 @@ export function createRush(
       timeSpent: 0,
     })),
     totalTimeSpent: 0,
+    sessions: [],
     createdAt: now,
   }));
 
@@ -188,6 +189,16 @@ export function activateProject(rushId: string, projectId: string): Rush | null 
     project.waitingSince = undefined;
     // Clear blinking when project is activated (user acknowledged notification)
     project.isBlinking = false;
+
+    // Initialize sessions array if it doesn't exist (backward compatibility)
+    if (!project.sessions) {
+      project.sessions = [];
+    }
+
+    // Start a new session if not already started
+    if (!project.currentSessionStart) {
+      project.currentSessionStart = now;
+    }
 
     // Start current task if not started
     const currentTask = project.tasks[project.currentStepIndex];
@@ -464,6 +475,93 @@ export function updateProjectNotes(rushId: string, projectId: string, notes: str
   rush.updatedAt = new Date().toISOString();
   saveRush(rush);
   return rush;
+}
+
+// Start a new session for a project
+export function startProjectSession(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (!project) return null;
+
+  // End current session if exists
+  if (project.currentSessionStart) {
+    endProjectSession(rushId, projectId);
+  }
+
+  project.currentSessionStart = new Date().toISOString();
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// End current session for a project
+export function endProjectSession(rushId: string, projectId: string, notes?: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  const project = rush.projects.find(p => p.id === projectId);
+  if (!project || !project.currentSessionStart) return null;
+
+  const now = new Date().toISOString();
+  const duration = Math.floor((new Date(now).getTime() - new Date(project.currentSessionStart).getTime()) / 1000);
+
+  // Initialize sessions array if it doesn't exist (for backward compatibility)
+  if (!project.sessions) {
+    project.sessions = [];
+  }
+
+  // Add session to history
+  const session = {
+    id: generateId(),
+    startedAt: project.currentSessionStart,
+    endedAt: now,
+    duration,
+    notes,
+  };
+  project.sessions.push(session);
+
+  // Clear current session
+  project.currentSessionStart = undefined;
+
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
+// Reset project session timer (end current and start new)
+export function resetProjectSession(rushId: string, projectId: string): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  // End current session
+  endProjectSession(rushId, projectId);
+
+  // Start new session
+  return startProjectSession(rushId, projectId);
+}
+
+// Get total time across all sessions for a project
+export function getProjectTotalTime(project: RushProject): number {
+  if (!project.sessions) return project.totalTimeSpent || 0;
+
+  const sessionsTotal = project.sessions.reduce((sum, session) => sum + session.duration, 0);
+
+  // Add current session time if running
+  if (project.currentSessionStart) {
+    const currentDuration = Math.floor((Date.now() - new Date(project.currentSessionStart).getTime()) / 1000);
+    return sessionsTotal + currentDuration;
+  }
+
+  return sessionsTotal;
+}
+
+// Get current session time
+export function getCurrentSessionTime(project: RushProject): number {
+  if (!project.currentSessionStart) return 0;
+  return Math.floor((Date.now() - new Date(project.currentSessionStart).getTime()) / 1000);
 }
 
 // Insert a new workflow step at a specific position

@@ -98,13 +98,23 @@ export interface RushProjectTask {
   notes?: string; // Notes for this task
 }
 
+export interface RushProjectSession {
+  id: string;
+  startedAt: string;
+  endedAt?: string;
+  duration: number; // Duration in seconds
+  notes?: string;
+}
+
 export interface RushProject {
   id: string;
   name: string;
   repoUrl?: string;
   currentStepIndex: number;
   tasks: RushProjectTask[];
-  totalTimeSpent: number; // Total time in seconds
+  totalTimeSpent: number; // Total time in seconds (deprecated, use sessions)
+  currentSessionStart?: string; // Current session start time
+  sessions: RushProjectSession[]; // History of all work sessions
   waitingSince?: string; // When project started waiting
   isBlinking?: boolean; // Should this project tab blink
   blinkingStopped?: boolean; // User manually stopped blinking
