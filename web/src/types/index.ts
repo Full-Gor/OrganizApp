@@ -108,6 +108,7 @@ export interface RushProject {
   waitingSince?: string; // When project started waiting
   isBlinking?: boolean; // Should this project tab blink
   blinkingStopped?: boolean; // User manually stopped blinking
+  notes?: string; // Notes for this project
   createdAt: string;
 }
 
