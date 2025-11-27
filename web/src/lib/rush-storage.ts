@@ -564,6 +564,17 @@ export function getCurrentSessionTime(project: RushProject): number {
   return Math.floor((Date.now() - new Date(project.currentSessionStart).getTime()) / 1000);
 }
 
+// Update clock theme for a Rush
+export function updateClockTheme(rushId: string, theme: 'dissolve' | 'fluid'): Rush | null {
+  const rush = getRush(rushId);
+  if (!rush) return null;
+
+  rush.clockTheme = theme;
+  rush.updatedAt = new Date().toISOString();
+  saveRush(rush);
+  return rush;
+}
+
 // Insert a new workflow step at a specific position
 export function insertWorkflowStep(
   rushId: string,
