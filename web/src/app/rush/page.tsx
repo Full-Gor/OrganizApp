@@ -2,10 +2,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw, GripVertical, Palette, Edit3 } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw, GripVertical, Palette, Edit3, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Rush, RushProject, RushWorkflowStep, RushStats, RushColor } from '@/types';
 import * as rushStorage from '@/lib/rush-storage';
+import DissolveTimer from '@/components/DissolveTimer';
 
 export default function RushPage() {
   const [rushes, setRushes] = useState<Rush[]>([]);
@@ -182,6 +183,33 @@ export default function RushPage() {
     }
   };
 
+  const handleStartSession = (projectId: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.startProjectSession(activeRush.id, projectId);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
+  const handleEndSession = (projectId: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.endProjectSession(activeRush.id, projectId);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
+  const handleResetSession = (projectId: string) => {
+    if (!activeRush) return;
+    const updated = rushStorage.resetProjectSession(activeRush.id, projectId);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  };
+
   const handleInsertTask = (afterIndex: number, title: string, timeLimit?: number) => {
     if (!activeRush) return;
     const updated = rushStorage.insertWorkflowStep(activeRush.id, afterIndex, { title, timeLimit });
@@ -232,6 +260,15 @@ export default function RushPage() {
     rushStorage.deleteRush(id);
     setRushes(prev => prev.filter(r => r.id !== id));
     if (activeRush?.id === id) setActiveRush(null);
+  };
+
+  const handleUpdateClockTheme = (theme: 'dissolve' | 'fluid') => {
+    if (!activeRush) return;
+    const updated = rushStorage.updateClockTheme(activeRush.id, theme);
+    if (updated) {
+      setActiveRush(updated);
+      setRushes(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
   };
 
   const handleUpdateRushColor = (rushId: string, color: RushColor) => {
@@ -346,11 +383,15 @@ export default function RushPage() {
           onStopBlinking={handleStopBlinking}
           onUpdateNotes={handleUpdateNotes}
           onUpdateProjectNotes={handleUpdateProjectNotes}
+          onStartSession={handleStartSession}
+          onEndSession={handleEndSession}
+          onResetSession={handleResetSession}
           onInsertTask={handleInsertTask}
           onResetProject={handleResetProject}
           onDeleteTask={handleDeleteTask}
           onReorderTasks={handleReorderTasks}
           onRenameTask={handleRenameTask}
+          onUpdateClockTheme={handleUpdateClockTheme}
         />
       ) : (
         <div className="text-center py-20">
@@ -566,11 +607,15 @@ function RushBoard({
   onStopBlinking,
   onUpdateNotes,
   onUpdateProjectNotes,
+  onStartSession,
+  onEndSession,
+  onResetSession,
   onInsertTask,
   onResetProject,
   onDeleteTask,
   onReorderTasks,
   onRenameTask,
+  onUpdateClockTheme,
 }: {
   rush: Rush;
   currentTime: number;
@@ -581,11 +626,15 @@ function RushBoard({
   onStopBlinking: (projectId: string) => void;
   onUpdateNotes: (taskIndex: number, notes: string) => void;
   onUpdateProjectNotes: (projectId: string, notes: string) => void;
+  onStartSession: (projectId: string) => void;
+  onEndSession: (projectId: string) => void;
+  onResetSession: (projectId: string) => void;
   onInsertTask: (afterIndex: number, title: string, timeLimit?: number) => void;
   onResetProject: (projectId: string) => void;
   onDeleteTask: (stepIndex: number) => void;
   onReorderTasks: (fromIndex: number, toIndex: number) => void;
   onRenameTask: (stepIndex: number, newTitle: string) => void;
+  onUpdateClockTheme: (theme: 'dissolve' | 'fluid') => void;
 }) {
   const [showInsertModal, setShowInsertModal] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -602,30 +651,53 @@ function RushBoard({
   const activeProject = rush.projects.find(p => p.id === rush.activeProjectId);
   const currentStep = activeProject ? rush.workflow[activeProject.currentStepIndex] : null;
   const currentTask = activeProject ? activeProject.tasks[activeProject.currentStepIndex] : null;
-  const timeLimit = currentStep?.timeLimit ? currentStep.timeLimit * 60 : null;
-  const isOverTime = timeLimit && currentTime > timeLimit;
-  const isWarning = timeLimit && currentTime > timeLimit * 0.8 && currentTime <= timeLimit;
+
+  const currentTheme = rush.clockTheme || 'dissolve';
 
   return (
     <div className="space-y-6">
-      {/* Global Timer & Controls */}
+      {/* Clock Display */}
+      <div className="relative">
+        <DissolveTimer theme={currentTheme} className="mx-auto max-w-2xl" />
+
+        {/* Theme Switcher */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button
+            onClick={() => onUpdateClockTheme('dissolve')}
+            className={cn(
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              currentTheme === 'dissolve'
+                ? 'bg-[#ffd700] text-[#2a1810] shadow-lg shadow-[#ffd700]/50'
+                : 'bg-white/10 text-white/60 hover:bg-white/20'
+            )}
+            title="Gold particle theme"
+          >
+            <Sparkles className="w-3.5 h-3.5 inline mr-1" />
+            Gold
+          </button>
+          <button
+            onClick={() => onUpdateClockTheme('fluid')}
+            className={cn(
+              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+              currentTheme === 'fluid'
+                ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg shadow-[#00f5ff]/50'
+                : 'bg-white/10 text-white/60 hover:bg-white/20'
+            )}
+            title="Cyan fluid theme"
+          >
+            <Sparkles className="w-3.5 h-3.5 inline mr-1" />
+            Cyan
+          </button>
+        </div>
+      </div>
+
+      {/* Task Controls */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={cn(
-              'text-3xl font-mono font-bold',
-              isOverTime ? 'text-red-600 animate-pulse' : isWarning ? 'text-orange-500' : 'text-gray-900'
-            )}>
-              {rushStorage.formatTime(currentTime)}
-            </div>
-            {timeLimit && (
-              <div className="text-sm text-gray-500">
-                / {rushStorage.formatTime(timeLimit)}
-              </div>
-            )}
             {currentStep && (
               <div className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                {currentStep.title}
+                Tache actuelle: {currentStep.title}
               </div>
             )}
           </div>
@@ -656,19 +728,6 @@ function RushBoard({
             </button>
           </div>
         </div>
-
-        {/* Progress bar */}
-        {timeLimit && (
-          <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={cn(
-                'h-full transition-all duration-1000',
-                isOverTime ? 'bg-red-500' : isWarning ? 'bg-orange-500' : 'bg-green-500'
-              )}
-              style={{ width: `${Math.min((currentTime / timeLimit) * 100, 100)}%` }}
-            />
-          </div>
-        )}
       </div>
 
       {/* Project Tabs (within current Rush) */}
@@ -743,10 +802,39 @@ function RushBoard({
       {activeProject && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              {activeProject.name}
-            </h3>
+            <div className="flex items-center gap-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-orange-500" />
+                {activeProject.name}
+              </h3>
+
+              {/* Session Timer */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-mono text-blue-900">
+                  {rushStorage.formatTime(rushStorage.getCurrentSessionTime(activeProject))}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResetSession(activeProject.id);
+                  }}
+                  className="p-0.5 hover:bg-blue-200 rounded transition-colors"
+                  title="Reset session timer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                </button>
+              </div>
+
+              {/* Total Time across all sessions */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+                <span className="text-xs text-gray-500">Total:</span>
+                <span className="text-sm font-mono text-gray-700">
+                  {rushStorage.formatTime(rushStorage.getProjectTotalTime(activeProject))}
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={() => onResetProject(activeProject.id)}
               className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
@@ -866,11 +954,6 @@ function RushBoard({
                           title="Double-cliquer pour renommer"
                         >
                           {step.title}
-                        </div>
-                      )}
-                      {step.timeLimit && (
-                        <div className="text-xs text-gray-500">
-                          Limite: {step.timeLimit} min
                         </div>
                       )}
                       {/* Show notes if exists */}
