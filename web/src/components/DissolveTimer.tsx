@@ -12,12 +12,22 @@ interface Particle {
   id: number;
   x: number;
   y: number;
-  opacity: number;
+  angle: number;
+  distance: number;
 }
 
 export default function DissolveTimer({ theme, className }: DissolveTimerProps) {
   const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const [particles, setParticles] = useState<{ [key: string]: Particle[] }>({});
+  const [isChanging, setIsChanging] = useState(false);
+  const [particles] = useState<Particle[]>(() =>
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      angle: Math.random() * Math.PI * 2,
+      distance: 40 + Math.random() * 60,
+    }))
+  );
   const prevTimeRef = useRef({ hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
@@ -29,30 +39,10 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
         seconds: now.getSeconds(),
       };
 
-      // Detect digit changes for dissolve effect
-      if (theme === 'dissolve') {
-        const prev = prevTimeRef.current;
-        const changed: string[] = [];
-
-        if (prev.hours !== newTime.hours) changed.push('hours');
-        if (prev.minutes !== newTime.minutes) changed.push('minutes');
-        if (prev.seconds !== newTime.seconds) changed.push('seconds');
-
-        if (changed.length > 0) {
-          const newParticles: { [key: string]: Particle[] } = {};
-          changed.forEach(key => {
-            newParticles[key] = Array.from({ length: 20 }, (_, i) => ({
-              id: Date.now() + i,
-              x: (Math.random() - 0.5) * 100,
-              y: (Math.random() - 0.5) * 100,
-              opacity: 1,
-            }));
-          });
-          setParticles(newParticles);
-
-          // Clear particles after animation
-          setTimeout(() => setParticles({}), 600);
-        }
+      const prev = prevTimeRef.current;
+      if (prev.hours !== newTime.hours || prev.minutes !== newTime.minutes || prev.seconds !== newTime.seconds) {
+        setIsChanging(true);
+        setTimeout(() => setIsChanging(false), theme === 'dissolve' ? 700 : 600);
       }
 
       prevTimeRef.current = newTime;
@@ -60,115 +50,77 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 1000); // Update every second
-
+    const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [theme]);
 
-  const formatDigit = (num: number, digits: number = 2) => {
-    return num.toString().padStart(digits, '0');
-  };
-
-  const renderDissolveDigit = (value: string, key: string) => {
-    const hasParticles = particles[key] && particles[key].length > 0;
-
-    return (
-      <div className="relative inline-block">
-        <span
-          className={cn(
-            'transition-opacity duration-300',
-            hasParticles ? 'opacity-0' : 'opacity-100'
-          )}
-          style={{
-            textShadow: '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.5)',
-          }}
-        >
-          {value}
-        </span>
-        {hasParticles && (
-          <div className="absolute inset-0 pointer-events-none">
-            {particles[key].map((particle) => (
-              <span
-                key={particle.id}
-                className="absolute top-1/2 left-1/2 text-[#ffd700] animate-dissolve-particle"
-                style={{
-                  transform: `translate(-50%, -50%) translate(${particle.x}px, ${particle.y}px)`,
-                  opacity: 0,
-                  animation: 'dissolve-particle 0.6s ease-out forwards',
-                }}
-              >
-                •
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderFluidDigit = (value: string, prevValue: string) => {
-    return (
-      <div className="relative inline-block overflow-hidden h-full">
-        <span
-          className="block transition-all duration-500 ease-out"
-          style={{
-            textShadow:
-              '0 0 10px rgba(0, 245, 255, 0.8), 0 0 20px rgba(0, 245, 255, 0.6), 0 0 30px rgba(255, 0, 255, 0.4)',
-            transform: value !== prevValue ? 'translateY(-100%)' : 'translateY(0)',
-            opacity: value !== prevValue ? 0 : 1,
-          }}
-        >
-          {value}
-        </span>
-      </div>
-    );
+  const formatTime = (h: number, m: number, s: number) => {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   if (theme === 'dissolve') {
     return (
       <div
         className={cn(
-          'relative px-8 py-6 rounded-2xl overflow-hidden',
-          'bg-gradient-to-br from-[#2a1810] via-[#1a0f08] to-black',
-          'border-2 border-[#ffd700]/30',
+          'relative rounded-[20px] overflow-hidden border',
           className
         )}
+        style={{
+          background: 'linear-gradient(145deg, #1a1510, #0f0d0a)',
+          borderColor: 'rgba(255, 215, 0, 0.2)',
+          padding: '40px',
+        }}
       >
-        {/* Animated glow orb */}
+        {/* Top border glow */}
         <div
-          className="absolute w-64 h-64 rounded-full blur-3xl opacity-20 animate-pulse"
+          className="absolute top-0 left-0 right-0 h-[1px]"
           style={{
-            background: 'radial-gradient(circle, #ffd700 0%, transparent 70%)',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
+            background: 'linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent)',
           }}
         />
 
-        <div className="relative z-10 font-mono text-5xl font-bold tracking-wider text-[#ffd700] flex items-center justify-center gap-1">
-          {renderDissolveDigit(formatDigit(time.hours), 'hours')}
-          <span className="animate-pulse">:</span>
-          {renderDissolveDigit(formatDigit(time.minutes), 'minutes')}
-          <span className="animate-pulse">:</span>
-          {renderDissolveDigit(formatDigit(time.seconds), 'seconds')}
-        </div>
+        {/* Display */}
+        <div className="relative flex justify-center items-center" style={{ padding: '40px 20px', minHeight: '120px' }}>
+          {/* Time Display */}
+          <div
+            className="relative text-center transition-all"
+            style={{
+              fontFamily: 'Orbitron, monospace',
+              fontSize: '4.5rem',
+              fontWeight: 900,
+              color: '#ffd700',
+              opacity: isChanging ? 0 : 1,
+              transform: isChanging ? 'scale(0.85)' : 'scale(1)',
+              transitionDuration: '0.35s',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {formatTime(time.hours, time.minutes, time.seconds)}
+          </div>
 
-        <style jsx>{`
-          @keyframes dissolve-particle {
-            0% {
-              opacity: 1;
-              transform: translate(-50%, -50%) translate(0, 0) scale(1);
-            }
-            50% {
-              opacity: 0.5;
-              transform: translate(-50%, -50%) translate(var(--x), var(--y)) scale(0.5);
-            }
-            100% {
-              opacity: 0;
-              transform: translate(-50%, -50%) translate(0, 0) scale(0);
-            }
-          }
-        `}</style>
+          {/* Particles */}
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute rounded-full pointer-events-none"
+              style={{
+                width: '5px',
+                height: '5px',
+                background: '#ffd700',
+                boxShadow: '0 0 8px #ffd700, 0 0 12px #ffd700',
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                opacity: isChanging ? 1 : 0,
+                transform: isChanging
+                  ? `translate(${Math.cos(particle.angle) * particle.distance}px, ${Math.sin(particle.angle) * particle.distance}px) scale(1.2)`
+                  : 'translate(0, 0) scale(0.5)',
+                transition: isChanging
+                  ? 'all 0.5s ease-out'
+                  : 'all 0.35s ease-in 0.35s',
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -177,49 +129,66 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
   return (
     <div
       className={cn(
-        'relative px-8 py-6 rounded-2xl overflow-hidden',
-        'bg-gradient-to-br from-[#0a192f] via-[#0f2942] to-[#1a3a52]',
-        'border-2 border-[#00f5ff]/40',
+        'relative rounded-[20px] overflow-hidden border',
         className
       )}
+      style={{
+        background: 'linear-gradient(145deg, #0a1520, #051015)',
+        borderColor: 'rgba(0, 245, 255, 0.2)',
+        padding: '40px',
+      }}
     >
-      {/* Animated glow orb */}
+      {/* Top border glow */}
       <div
-        className="absolute w-80 h-80 rounded-full blur-3xl opacity-30"
+        className="absolute top-0 left-0 right-0 h-[1px]"
         style={{
-          background: 'radial-gradient(circle, #00f5ff 0%, #ff00ff 50%, transparent 70%)',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          animation: 'float 8s ease-in-out infinite',
+          background: 'linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.3), transparent)',
         }}
       />
 
-      <div className="relative z-10 font-mono text-5xl font-bold tracking-wider text-[#00f5ff] flex items-center justify-center gap-1">
-        {renderFluidDigit(
-          formatDigit(time.hours),
-          formatDigit(prevTimeRef.current.hours)
-        )}
-        <span className="animate-pulse text-[#ff00ff]">:</span>
-        {renderFluidDigit(
-          formatDigit(time.minutes),
-          formatDigit(prevTimeRef.current.minutes)
-        )}
-        <span className="animate-pulse text-[#ff00ff]">:</span>
-        {renderFluidDigit(
-          formatDigit(time.seconds),
-          formatDigit(prevTimeRef.current.seconds)
-        )}
+      {/* Animated glow */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(0, 245, 255, 0.25), transparent 70%)',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          animation: 'fluidGlow 4s ease-in-out infinite',
+        }}
+      />
+
+      {/* Display */}
+      <div className="relative z-10 flex justify-center items-center overflow-hidden" style={{ padding: '40px 20px', minHeight: '120px' }}>
+        <div
+          className="relative text-center"
+          style={{
+            fontFamily: 'Bebas Neue, sans-serif',
+            fontSize: '5rem',
+            color: '#00f5ff',
+            textShadow: '0 0 15px #00f5ff, 0 0 35px #00f5ff, 0 0 55px rgba(0, 245, 255, 0.6)',
+            letterSpacing: '0.08em',
+            transform: isChanging ? 'translateY(-120%) scale(0.85)' : 'translateY(0) scale(1)',
+            opacity: isChanging ? 0 : 1,
+            filter: isChanging ? 'blur(8px)' : 'blur(0)',
+            transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          {formatTime(time.hours, time.minutes, time.seconds)}
+        </div>
       </div>
 
       <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translate(-50%, -50%) translateY(0);
+        @keyframes fluidGlow {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.25;
           }
           50% {
-            transform: translate(-50%, -50%) translateY(-20px);
+            transform: translate(-50%, -50%) scale(1.3);
+            opacity: 0.35;
           }
         }
       `}</style>
