@@ -17,34 +17,32 @@ interface Particle {
 }
 
 export default function DissolveTimer({ theme, className }: DissolveTimerProps) {
-  const [time, setTime] = useState({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
-  const prevTimeRef = useRef({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
-  const [changingDigits, setChangingDigits] = useState<Set<string>>(new Set());
+  const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [isChanging, setIsChanging] = useState(false);
+  const [particles] = useState<Particle[]>(() =>
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      angle: Math.random() * Math.PI * 2,
+      distance: 40 + Math.random() * 60,
+    }))
+  );
+  const prevTimeRef = useRef({ hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      const s = String(now.getSeconds()).padStart(2, '0');
-
       const newTime = {
-        h0: h[0], h1: h[1],
-        m0: m[0], m1: m[1],
-        s0: s[0], s1: s[1],
+        hours: now.getHours(),
+        minutes: now.getMinutes(),
+        seconds: now.getSeconds(),
       };
 
-      // Detect changes
-      const changed = new Set<string>();
-      Object.keys(newTime).forEach(key => {
-        if (prevTimeRef.current[key as keyof typeof newTime] !== newTime[key as keyof typeof newTime]) {
-          changed.add(key);
-        }
-      });
-
-      if (changed.size > 0) {
-        setChangingDigits(changed);
-        setTimeout(() => setChangingDigits(new Set()), theme === 'dissolve' ? 700 : 600);
+      const prev = prevTimeRef.current;
+      if (prev.hours !== newTime.hours || prev.minutes !== newTime.minutes || prev.seconds !== newTime.seconds) {
+        setIsChanging(true);
+        setTimeout(() => setIsChanging(false), theme === 'dissolve' ? 700 : 600);
       }
 
       prevTimeRef.current = newTime;
@@ -55,6 +53,10 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [theme]);
+
+  const formatTime = (h: number, m: number, s: number) => {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   if (theme === 'dissolve') {
     return (
@@ -78,17 +80,45 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
         />
 
         {/* Display */}
-        <div className="flex justify-center items-center gap-2" style={{ padding: '40px 20px' }}>
-          {(['h0', 'h1'] as const).map((key, i) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} isFirst={i === 0} />
-          ))}
-          <DissolveColon />
-          {(['m0', 'm1'] as const).map((key, i) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} isFirst={i === 0} />
-          ))}
-          <DissolveColon />
-          {(['s0', 's1'] as const).map((key, i) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} isFirst={i === 0} />
+        <div className="relative flex justify-center items-center" style={{ padding: '40px 20px', minHeight: '120px' }}>
+          {/* Time Display */}
+          <div
+            className="relative text-center transition-all"
+            style={{
+              fontFamily: 'Orbitron, monospace',
+              fontSize: '4.5rem',
+              fontWeight: 900,
+              color: '#ffd700',
+              opacity: isChanging ? 0 : 1,
+              transform: isChanging ? 'scale(0.85)' : 'scale(1)',
+              transitionDuration: '0.35s',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {formatTime(time.hours, time.minutes, time.seconds)}
+          </div>
+
+          {/* Particles */}
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="absolute rounded-full pointer-events-none"
+              style={{
+                width: '5px',
+                height: '5px',
+                background: '#ffd700',
+                boxShadow: '0 0 8px #ffd700, 0 0 12px #ffd700',
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                opacity: isChanging ? 1 : 0,
+                transform: isChanging
+                  ? `translate(${Math.cos(particle.angle) * particle.distance}px, ${Math.sin(particle.angle) * particle.distance}px) scale(1.2)`
+                  : 'translate(0, 0) scale(0.5)',
+                transition: isChanging
+                  ? 'all 0.5s ease-out'
+                  : 'all 0.35s ease-in 0.35s',
+              }}
+            />
           ))}
         </div>
       </div>
@@ -118,9 +148,11 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
 
       {/* Animated glow */}
       <div
-        className="absolute w-[200px] h-[200px] rounded-full pointer-events-none"
+        className="absolute rounded-full pointer-events-none"
         style={{
-          background: 'radial-gradient(circle, rgba(0, 245, 255, 0.2), transparent 70%)',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(0, 245, 255, 0.25), transparent 70%)',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
@@ -129,202 +161,37 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
       />
 
       {/* Display */}
-      <div className="relative z-10 flex justify-center items-center gap-[10px]" style={{ padding: '40px 20px' }}>
-        {(['h0', 'h1'] as const).map((key) => (
-          <FluidDigit key={key} value={time[key]} prevValue={prevTimeRef.current[key]} isChanging={changingDigits.has(key)} />
-        ))}
-        <FluidColon />
-        {(['m0', 'm1'] as const).map((key) => (
-          <FluidDigit key={key} value={time[key]} prevValue={prevTimeRef.current[key]} isChanging={changingDigits.has(key)} />
-        ))}
-        <FluidColon />
-        {(['s0', 's1'] as const).map((key) => (
-          <FluidDigit key={key} value={time[key]} prevValue={prevTimeRef.current[key]} isChanging={changingDigits.has(key)} />
-        ))}
-        <FluidColon small />
-        {(['ms0', 'ms1', 'ms2'] as const).map((key) => (
-          <FluidDigit key={key} value={time[key]} prevValue={prevTimeRef.current[key]} isChanging={changingDigits.has(key)} isMs />
-        ))}
+      <div className="relative z-10 flex justify-center items-center overflow-hidden" style={{ padding: '40px 20px', minHeight: '120px' }}>
+        <div
+          className="relative text-center"
+          style={{
+            fontFamily: 'Bebas Neue, sans-serif',
+            fontSize: '5rem',
+            color: '#00f5ff',
+            textShadow: '0 0 15px #00f5ff, 0 0 35px #00f5ff, 0 0 55px rgba(0, 245, 255, 0.6)',
+            letterSpacing: '0.08em',
+            transform: isChanging ? 'translateY(-120%) scale(0.85)' : 'translateY(0) scale(1)',
+            opacity: isChanging ? 0 : 1,
+            filter: isChanging ? 'blur(8px)' : 'blur(0)',
+            transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
+          }}
+        >
+          {formatTime(time.hours, time.minutes, time.seconds)}
+        </div>
       </div>
 
       <style jsx>{`
         @keyframes fluidGlow {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.2); }
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.25;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.3);
+            opacity: 0.35;
+          }
         }
       `}</style>
     </div>
-  );
-}
-
-// Dissolve Digit Component
-function DissolveDigit({ value, isChanging, isMs, isFirst }: { value: string; isChanging: boolean; isMs?: boolean; isFirst?: boolean }) {
-  const [particles] = useState<Particle[]>(() =>
-    Array.from({ length: isMs ? 12 : 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * (isMs ? 38 : 55),
-      y: Math.random() * (isMs ? 60 : 85),
-      angle: Math.random() * Math.PI * 2,
-      distance: 30 + Math.random() * 40,
-    }))
-  );
-
-  return (
-    <div
-      className="relative"
-      style={{
-        width: isMs ? '38px' : '55px',
-        height: isMs ? '60px' : '85px',
-      }}
-    >
-      {/* Digit */}
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all"
-        style={{
-          fontFamily: 'Orbitron, monospace',
-          fontSize: isMs ? '2.2rem' : '3.5rem',
-          fontWeight: 900,
-          color: '#ffd700',
-          opacity: isChanging && !isMs ? 0 : 1,
-          transform: isChanging && !isMs ? 'scale(0.8)' : 'scale(1)',
-          transitionDuration: isMs ? '0.05s' : '0.3s',
-        }}
-      >
-        {value}
-      </div>
-
-      {/* Particles */}
-      {!isMs && particles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute w-1 h-1 rounded-full"
-          style={{
-            background: '#ffd700',
-            boxShadow: '0 0 6px #ffd700',
-            left: `${particle.x}px`,
-            top: `${particle.y}px`,
-            opacity: isChanging ? 1 : 0,
-            transform: isChanging
-              ? `translate(${Math.cos(particle.angle) * particle.distance}px, ${Math.sin(particle.angle) * particle.distance}px)`
-              : 'translate(0, 0)',
-            transition: isChanging
-              ? 'all 0.4s ease-out'
-              : 'all 0.3s ease-in 0.3s',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Dissolve Colon Component
-function DissolveColon({ small }: { small?: boolean }) {
-  return (
-    <div className="flex flex-col" style={{ gap: small ? '0' : '25px' }}>
-      <div
-        className="rounded-full"
-        style={{
-          width: small ? '6px' : '8px',
-          height: small ? '6px' : '8px',
-          background: '#ffd700',
-          boxShadow: '0 0 10px #ffd700',
-          animation: 'dissolvePulse 1s infinite',
-        }}
-      />
-      {!small && (
-        <div
-          className="rounded-full"
-          style={{
-            width: '8px',
-            height: '8px',
-            background: '#ffd700',
-            boxShadow: '0 0 10px #ffd700',
-            animation: 'dissolvePulse 1s infinite',
-          }}
-        />
-      )}
-      <style jsx>{`
-        @keyframes dissolvePulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(0.6); opacity: 0.5; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// Fluid Digit Component
-function FluidDigit({ value, prevValue, isChanging, isMs }: { value: string; prevValue: string; isChanging: boolean; isMs?: boolean }) {
-  const [displayValue, setDisplayValue] = useState(value);
-  const [isExiting, setIsExiting] = useState(false);
-  const [isEntering, setIsEntering] = useState(false);
-
-  useEffect(() => {
-    if (isChanging && !isMs) {
-      setIsExiting(true);
-
-      setTimeout(() => {
-        setDisplayValue(value);
-        setIsExiting(false);
-        setIsEntering(true);
-
-        requestAnimationFrame(() => {
-          setIsEntering(false);
-        });
-      }, 300);
-    } else {
-      setDisplayValue(value);
-    }
-  }, [value, isChanging, isMs]);
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-lg border"
-      style={{
-        width: isMs ? '40px' : '60px',
-        height: isMs ? '60px' : '90px',
-        background: 'rgba(0, 245, 255, 0.05)',
-        borderColor: 'rgba(0, 245, 255, 0.1)',
-      }}
-    >
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          fontFamily: 'Bebas Neue, sans-serif',
-          fontSize: isMs ? '2.5rem' : '4rem',
-          color: '#00f5ff',
-          textShadow: '0 0 10px #00f5ff, 0 0 30px #00f5ff, 0 0 50px rgba(0, 245, 255, 0.5)',
-          transform: isExiting ? 'translateY(-100%) scale(0.8)' : isEntering ? 'translateY(100%) scale(0.8)' : 'translateY(0) scale(1)',
-          opacity: isExiting || isEntering ? 0 : 1,
-          filter: isExiting || isEntering ? 'blur(5px)' : 'blur(0)',
-          transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        {displayValue}
-      </div>
-    </div>
-  );
-}
-
-// Fluid Colon Component
-function FluidColon({ small }: { small?: boolean }) {
-  return (
-    <span
-      style={{
-        fontFamily: 'Bebas Neue, sans-serif',
-        fontSize: small ? '2rem' : '4rem',
-        color: '#00f5ff',
-        textShadow: '0 0 20px #00f5ff',
-        animation: 'fluidPulse 2s ease-in-out infinite',
-      }}
-    >
-      {small ? '.' : ':'}
-      <style jsx>{`
-        @keyframes fluidPulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.95); }
-        }
-      `}</style>
-    </span>
   );
 }
