@@ -371,6 +371,43 @@ export default function RushPage() {
         </div>
       )}
 
+      {/* Clock Display (centered) */}
+      {activeRush && (
+        <div className="mb-6">
+          <div className="relative max-w-2xl mx-auto">
+            <DissolveTimer theme={activeRush.clockTheme || 'dissolve'} />
+
+            {/* Theme Switcher - positioned below clock */}
+            <div className="flex justify-center gap-3 mt-4">
+              <button
+                onClick={() => handleUpdateClockTheme('dissolve')}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  (activeRush.clockTheme || 'dissolve') === 'dissolve'
+                    ? 'bg-[#ffd700] text-[#2a1810] shadow-lg shadow-[#ffd700]/50 scale-105'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#ffd700]'
+                )}
+              >
+                <Sparkles className="w-4 h-4" />
+                Gold Particles
+              </button>
+              <button
+                onClick={() => handleUpdateClockTheme('fluid')}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  activeRush.clockTheme === 'fluid'
+                    ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg shadow-[#00f5ff]/50 scale-105'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#00f5ff]'
+                )}
+              >
+                <Sparkles className="w-4 h-4" />
+                Cyan Fluid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Active Rush Display */}
       {activeRush ? (
         <RushBoard
@@ -391,7 +428,6 @@ export default function RushPage() {
           onDeleteTask={handleDeleteTask}
           onReorderTasks={handleReorderTasks}
           onRenameTask={handleRenameTask}
-          onUpdateClockTheme={handleUpdateClockTheme}
         />
       ) : (
         <div className="text-center py-20">
@@ -615,7 +651,6 @@ function RushBoard({
   onDeleteTask,
   onReorderTasks,
   onRenameTask,
-  onUpdateClockTheme,
 }: {
   rush: Rush;
   currentTime: number;
@@ -634,7 +669,6 @@ function RushBoard({
   onDeleteTask: (stepIndex: number) => void;
   onReorderTasks: (fromIndex: number, toIndex: number) => void;
   onRenameTask: (stepIndex: number, newTitle: string) => void;
-  onUpdateClockTheme: (theme: 'dissolve' | 'fluid') => void;
 }) {
   const [showInsertModal, setShowInsertModal] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -652,45 +686,8 @@ function RushBoard({
   const currentStep = activeProject ? rush.workflow[activeProject.currentStepIndex] : null;
   const currentTask = activeProject ? activeProject.tasks[activeProject.currentStepIndex] : null;
 
-  const currentTheme = rush.clockTheme || 'dissolve';
-
   return (
     <div className="space-y-6">
-      {/* Clock Display */}
-      <div className="relative">
-        <DissolveTimer theme={currentTheme} className="mx-auto max-w-2xl" />
-
-        {/* Theme Switcher */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <button
-            onClick={() => onUpdateClockTheme('dissolve')}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-              currentTheme === 'dissolve'
-                ? 'bg-[#ffd700] text-[#2a1810] shadow-lg shadow-[#ffd700]/50'
-                : 'bg-white/10 text-white/60 hover:bg-white/20'
-            )}
-            title="Gold particle theme"
-          >
-            <Sparkles className="w-3.5 h-3.5 inline mr-1" />
-            Gold
-          </button>
-          <button
-            onClick={() => onUpdateClockTheme('fluid')}
-            className={cn(
-              'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-              currentTheme === 'fluid'
-                ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg shadow-[#00f5ff]/50'
-                : 'bg-white/10 text-white/60 hover:bg-white/20'
-            )}
-            title="Cyan fluid theme"
-          >
-            <Sparkles className="w-3.5 h-3.5 inline mr-1" />
-            Cyan
-          </button>
-        </div>
-      </div>
-
       {/* Task Controls */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="flex items-center justify-between">
