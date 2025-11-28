@@ -151,6 +151,7 @@ function DissolveDigit({ value, isChanging }: { value: string; isChanging: boole
           opacity: isChanging ? 0 : 1,
           transform: isChanging ? 'scale(0.8)' : 'scale(1)',
           transitionDuration: '0.3s',
+          lineHeight: 1,
         }}
       >
         {value}
@@ -160,7 +161,7 @@ function DissolveDigit({ value, isChanging }: { value: string; isChanging: boole
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className="absolute w-1 h-1 rounded-full"
+          className="absolute w-1 h-1 rounded-full pointer-events-none"
           style={{
             background: '#ffd700',
             boxShadow: '0 0 6px #ffd700',
