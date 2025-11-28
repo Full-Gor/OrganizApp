@@ -16,7 +16,7 @@ const STORAGE_KEY = 'organizapp_ai_messages';
 const INITIAL_MESSAGE: Message = {
   id: '1',
   role: 'assistant',
-  content: "Bonjour ! Je suis l'assistant IA d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
+  content: "Bonjour ! Je suis l'assistant Cell d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
   timestamp: new Date(),
 };
 
@@ -247,7 +247,7 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
           isOpen && 'hidden'
         )}
       >
-        <span className="text-lg font-bold">IA</span>
+        <span className="text-lg font-bold">Cell</span>
       </button>
 
       {/* Chat Window */}
@@ -257,10 +257,10 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Bot className="w-5 h-5" />
+                <span className="text-sm font-bold">C</span>
               </div>
               <div>
-                <h3 className="font-semibold text-sm">Assistant IA</h3>
+                <h3 className="font-semibold text-sm">Assistant Cell</h3>
                 <p className="text-xs text-white/80">Toujours prêt à aider</p>
               </div>
             </div>
@@ -302,9 +302,9 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
                   )}
                 >
                   {message.role === 'user' ? (
-                    <User className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Vous</span>
                   ) : (
-                    <Bot className="w-4 h-4" />
+                    <span className="text-xs font-bold">C</span>
                   )}
                 </div>
                 <div
@@ -323,7 +323,7 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
             {isLoading && (
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                  <Bot className="w-4 h-4" />
+                  <span className="text-xs font-bold">C</span>
                 </div>
                 <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-none">
                   <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
