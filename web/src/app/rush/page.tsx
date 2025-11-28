@@ -262,7 +262,7 @@ export default function RushPage() {
     if (activeRush?.id === id) setActiveRush(null);
   };
 
-  const handleUpdateClockTheme = (theme: 'dissolve' | 'fluid' | 'flap') => {
+  const handleUpdateClockTheme = (theme: 'fluid' | 'flap' | 'flap-light') => {
     if (!activeRush) return;
     const updated = rushStorage.updateClockTheme(activeRush.id, theme);
     if (updated) {
@@ -323,26 +323,15 @@ export default function RushPage() {
         {/* Center: Clock and theme buttons */}
         {activeRush && (
           <div className="flex items-center gap-2">
-            <DissolveTimer theme={activeRush.clockTheme || 'dissolve'} />
+            <DissolveTimer theme={activeRush.clockTheme || 'fluid'} />
 
             {/* Theme Switcher Buttons */}
             <div className="flex gap-1.5 items-center">
               <button
-                onClick={() => handleUpdateClockTheme('dissolve')}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  (activeRush.clockTheme || 'dissolve') === 'dissolve'
-                    ? 'bg-[#ffd700] text-[#2a1810] shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#ffd700]'
-                )}
-              >
-                Gold
-              </button>
-              <button
                 onClick={() => handleUpdateClockTheme('fluid')}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  activeRush.clockTheme === 'fluid'
+                  (activeRush.clockTheme || 'fluid') === 'fluid'
                     ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg'
                     : 'bg-white text-gray-700 border border-gray-200 hover:border-[#00f5ff]'
                 )}
@@ -354,11 +343,22 @@ export default function RushPage() {
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
                   activeRush.clockTheme === 'flap'
-                    ? 'bg-[#e8e8e8] text-[#1a1a1a] shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e8e8e8]'
+                    ? 'bg-[#2c2c2c] text-[#e8e8e8] shadow-lg'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#2c2c2c]'
                 )}
               >
                 Flap
+              </button>
+              <button
+                onClick={() => handleUpdateClockTheme('flap-light')}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  activeRush.clockTheme === 'flap-light'
+                    ? 'bg-[#f5f5f5] text-[#1a1a1a] shadow-lg border border-gray-300'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#f5f5f5]'
+                )}
+              >
+                Flap Light
               </button>
             </div>
           </div>
