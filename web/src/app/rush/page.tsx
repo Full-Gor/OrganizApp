@@ -326,7 +326,7 @@ export default function RushPage() {
               <DissolveTimer theme={activeRush.clockTheme || 'dissolve'} />
 
               {/* Theme Switcher Buttons */}
-              <div className="flex gap-1.5 ml-2">
+              <div className="flex gap-1.5 ml-2 items-center">
                 <button
                   onClick={() => handleUpdateClockTheme('dissolve')}
                   className={cn(
@@ -348,6 +348,17 @@ export default function RushPage() {
                   )}
                 >
                   Cyan
+                </button>
+                <button
+                  onClick={() => handleUpdateClockTheme('flap')}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                    activeRush.clockTheme === 'flap'
+                      ? 'bg-[#e8e8e8] text-[#1a1a1a] shadow-lg'
+                      : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e8e8e8]'
+                  )}
+                >
+                  Flap
                 </button>
               </div>
             </>

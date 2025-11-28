@@ -128,7 +128,7 @@ export interface Rush {
   id: string;
   name: string;
   color?: RushColor; // Tab color
-  clockTheme?: 'dissolve' | 'fluid'; // Clock display theme
+  clockTheme?: 'dissolve' | 'fluid' | 'flap'; // Clock display theme
   workflow: RushWorkflowStep[];
   projects: RushProject[];
   status: 'active' | 'paused' | 'completed';
