@@ -565,7 +565,7 @@ export function getCurrentSessionTime(project: RushProject): number {
 }
 
 // Update clock theme for a Rush
-export function updateClockTheme(rushId: string, theme: 'dissolve' | 'fluid' | 'flap'): Rush | null {
+export function updateClockTheme(rushId: string, theme: 'fluid' | 'flap' | 'flap-light'): Rush | null {
   const rush = getRush(rushId);
   if (!rush) return null;
 
