@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={`${orbitron.variable} ${bebasNeue.variable}`}>
       <body className={inter.className}>
         <Layout>{children}</Layout>
       </body>

@@ -85,7 +85,7 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
           <div
             className="relative text-center transition-all"
             style={{
-              fontFamily: 'Orbitron, monospace',
+              fontFamily: 'var(--font-orbitron), Orbitron, monospace',
               fontSize: '4.5rem',
               fontWeight: 900,
               color: '#ffd700',
@@ -165,7 +165,7 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
         <div
           className="relative text-center"
           style={{
-            fontFamily: 'Bebas Neue, sans-serif',
+            fontFamily: 'var(--font-bebas-neue), Bebas Neue, sans-serif',
             fontSize: '5rem',
             color: '#00f5ff',
             textShadow: '0 0 15px #00f5ff, 0 0 35px #00f5ff, 0 0 55px rgba(0, 245, 255, 0.6)',
@@ -179,19 +179,6 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
           {formatTime(time.hours, time.minutes, time.seconds)}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fluidGlow {
-          0%, 100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.25;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.3);
-            opacity: 0.35;
-          }
-        }
-      `}</style>
     </div>
   );
 }
