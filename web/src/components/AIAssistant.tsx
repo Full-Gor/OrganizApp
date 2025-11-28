@@ -16,7 +16,7 @@ const STORAGE_KEY = 'organizapp_ai_messages';
 const INITIAL_MESSAGE: Message = {
   id: '1',
   role: 'assistant',
-  content: "Bonjour ! Je suis l'assistant Cell d'OrganizApp. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
+  content: "Bonjour ! Je suis Cell. Je peux vous aider à :\n\n• Créer des projets et des tâches\n• Planifier des événements et RDV\n• Organiser votre travail\n• Ajouter des éléments de veille\n• Créer des rappels\n• Voir vos statistiques\n\nQue puis-je faire pour vous ?",
   timestamp: new Date(),
 };
 
@@ -256,8 +256,8 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <span className="text-sm font-bold">C</span>
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center px-1">
+                <span className="text-xs font-bold">Cell</span>
               </div>
               <div>
                 <h3 className="font-semibold text-sm">Assistant Cell</h3>
@@ -295,16 +295,16 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
               >
                 <div
                   className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                    'min-w-[32px] h-8 rounded-full flex items-center justify-center shrink-0 px-1.5',
                     message.role === 'user'
                       ? 'bg-primary-100 text-primary-600'
                       : 'bg-purple-100 text-purple-600'
                   )}
                 >
                   {message.role === 'user' ? (
-                    <span className="text-xs font-semibold">Vous</span>
+                    <span className="text-[10px] font-semibold">Vous</span>
                   ) : (
-                    <span className="text-xs font-bold">C</span>
+                    <span className="text-[10px] font-bold">Cell</span>
                   )}
                 </div>
                 <div
@@ -322,8 +322,8 @@ export default function AIAssistant({ onAction }: { onAction?: () => void }) {
 
             {isLoading && (
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                  <span className="text-xs font-bold">C</span>
+                <div className="min-w-[32px] h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center px-1.5">
+                  <span className="text-[10px] font-bold">Cell</span>
                 </div>
                 <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-none">
                   <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
