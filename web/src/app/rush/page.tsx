@@ -262,7 +262,7 @@ export default function RushPage() {
     if (activeRush?.id === id) setActiveRush(null);
   };
 
-  const handleUpdateClockTheme = (theme: 'dissolve' | 'fluid') => {
+  const handleUpdateClockTheme = (theme: 'dissolve' | 'fluid' | 'flap') => {
     if (!activeRush) return;
     const updated = rushStorage.updateClockTheme(activeRush.id, theme);
     if (updated) {
