@@ -309,24 +309,60 @@ export default function RushPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Rush Mode</h1>
+              <p className="text-sm text-gray-500">Gestion multi-projets en parallele</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Rush Mode</h1>
-            <p className="text-sm text-gray-500">Gestion multi-projets en parallele</p>
-          </div>
+
+          {/* Clock Display */}
+          {activeRush && (
+            <DissolveTimer theme={activeRush.clockTheme || 'dissolve'} />
+          )}
         </div>
+
         <div className="flex gap-2">
           {activeRush && (
-            <button
-              onClick={() => setShowStatsModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Stats
-            </button>
+            <>
+              {/* Theme Switcher Buttons */}
+              <button
+                onClick={() => handleUpdateClockTheme('dissolve')}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-xs font-medium transition-all',
+                  (activeRush.clockTheme || 'dissolve') === 'dissolve'
+                    ? 'bg-[#ffd700] text-[#2a1810] shadow-lg'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#ffd700]'
+                )}
+                title="Gold theme"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => handleUpdateClockTheme('fluid')}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-xs font-medium transition-all',
+                  activeRush.clockTheme === 'fluid'
+                    ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#00f5ff]'
+                )}
+                title="Cyan theme"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setShowStatsModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Stats
+              </button>
+            </>
           )}
           <button
             onClick={() => setShowCreateModal(true)}
@@ -368,43 +404,6 @@ export default function RushPage() {
               }}
             />
           ))}
-        </div>
-      )}
-
-      {/* Clock Display (centered) */}
-      {activeRush && (
-        <div className="mb-6">
-          <div className="relative max-w-2xl mx-auto">
-            <DissolveTimer theme={activeRush.clockTheme || 'dissolve'} />
-
-            {/* Theme Switcher - positioned below clock */}
-            <div className="flex justify-center gap-3 mt-4">
-              <button
-                onClick={() => handleUpdateClockTheme('dissolve')}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                  (activeRush.clockTheme || 'dissolve') === 'dissolve'
-                    ? 'bg-[#ffd700] text-[#2a1810] shadow-lg shadow-[#ffd700]/50 scale-105'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#ffd700]'
-                )}
-              >
-                <Sparkles className="w-4 h-4" />
-                Gold Particles
-              </button>
-              <button
-                onClick={() => handleUpdateClockTheme('fluid')}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
-                  activeRush.clockTheme === 'fluid'
-                    ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg shadow-[#00f5ff]/50 scale-105'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#00f5ff]'
-                )}
-              >
-                <Sparkles className="w-4 h-4" />
-                Cyan Fluid
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
