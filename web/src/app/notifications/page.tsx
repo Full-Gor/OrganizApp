@@ -120,12 +120,12 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">
             {unreadCount > 0 ? `${unreadCount} non lue(s)` : 'Aucune notification non lue'}
           </p>
         </div>
@@ -133,18 +133,20 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
             >
-              <CheckCheck className="w-5 h-5" />
-              Tout marquer lu
+              <CheckCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Tout marquer lu</span>
+              <span className="sm:hidden">Marquer lu</span>
             </button>
           )}
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm"
           >
-            <Plus className="w-5 h-5" />
-            Créer un rappel
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Créer un rappel</span>
+            <span className="sm:hidden">Créer</span>
           </button>
         </div>
       </div>
@@ -177,9 +179,9 @@ export default function NotificationsPage() {
 
       {/* Notifications List */}
       {filteredNotifications.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <BellOff className="w-12 h-12 text-gray-300 mx-auto" />
-          <p className="text-gray-500 mt-4">
+        <div className="text-center py-8 sm:py-12 bg-white rounded-xl border border-gray-200">
+          <BellOff className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto" />
+          <p className="text-sm sm:text-base text-gray-500 mt-3 sm:mt-4">
             {filter === 'unread' ? 'Aucune notification non lue' : 'Aucune notification'}
           </p>
         </div>
@@ -189,43 +191,43 @@ export default function NotificationsPage() {
             <div
               key={notification.id}
               className={cn(
-                'p-4 flex items-start gap-4 transition-colors',
+                'p-3 sm:p-4 flex items-start gap-2 sm:gap-4 transition-colors',
                 !notification.read && 'bg-primary-50'
               )}
             >
-              <div className="shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+              <div className="shrink-0 mt-0.5 sm:mt-1">{getNotificationIcon(notification.type)}</div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h3
                       className={cn(
-                        'font-medium',
+                        'text-sm sm:text-base font-medium',
                         notification.read ? 'text-gray-700' : 'text-gray-900'
                       )}
                     >
                       {notification.title}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">{notification.message}</p>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">{notification.message}</p>
+                    <p className="text-xs text-gray-400 mt-1 sm:mt-2">
                       {formatDateTime(notification.createdAt)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                     {!notification.read && (
                       <button
                         onClick={() => markAsRead(notification.id)}
-                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                        className="p-1 sm:p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
                         title="Marquer comme lu"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     )}
                     <button
                       onClick={() => removeNotification(notification.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                      className="p-1 sm:p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
                       title="Supprimer"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
@@ -308,17 +310,17 @@ export default function NotificationsPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-2 sm:gap-3 pt-4">
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:bg-gray-100 rounded-lg"
             >
               Annuler
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-primary-600 text-white rounded-lg hover:bg-primary-700"
             >
               Créer
             </button>

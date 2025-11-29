@@ -125,52 +125,54 @@ export default function ProjectDetailPage() {
   const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         <Link
           href="/projects"
-          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </Link>
-        <div className="flex-1">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <div
-                  className="w-4 h-4 rounded-full"
+                  className="w-3 h-3 sm:w-4 sm:h-4 rounded-full shrink-0"
                   style={{ backgroundColor: project.color }}
                 />
-                <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{project.name}</h1>
               </div>
-              <p className="text-gray-500 mt-1">{project.description || 'Aucune description'}</p>
+              <p className="text-xs sm:text-base text-gray-500 mt-1 line-clamp-2">{project.description || 'Aucune description'}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <button
                 onClick={() => setShowProjectForm(true)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                title="Modifier"
               >
-                <Edit className="w-5 h-5" />
+                <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
                 onClick={() => setConfirmDeleteProject(true)}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                title="Supprimer"
               >
-                <Trash2 className="w-5 h-5" />
+                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className={cn('text-sm px-3 py-1 rounded-full', projectStatusColors[project.status])}>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3">
+            <span className={cn('text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full', projectStatusColors[project.status])}>
               {projectStatusLabels[project.status]}
             </span>
-            <span className={cn('text-sm px-3 py-1 rounded-full border', priorityColors[project.priority])}>
-              Priorité: {priorityLabels[project.priority]}
+            <span className={cn('text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border', priorityColors[project.priority])}>
+              <span className="hidden sm:inline">Priorité: </span>{priorityLabels[project.priority]}
             </span>
             {project.dueDate && (
-              <span className="text-sm px-3 py-1 rounded-full bg-gray-100 text-gray-700">
-                Échéance: {formatDate(project.dueDate)}
+              <span className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gray-100 text-gray-700">
+                <span className="hidden sm:inline">Échéance: </span>{formatDate(project.dueDate)}
               </span>
             )}
           </div>
@@ -178,48 +180,48 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="w-5 h-5 text-blue-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg shrink-0">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Total</p>
-              <p className="text-xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Check className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Terminées</p>
-              <p className="text-xl font-bold text-gray-900">{stats.completed}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">Total</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.total}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="w-5 h-5 text-yellow-600" />
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg shrink-0">
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">En cours</p>
-              <p className="text-xl font-bold text-gray-900">{stats.inProgress}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">Terminées</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.completed}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-lg', stats.overdue > 0 ? 'bg-red-100' : 'bg-gray-100')}>
-              <AlertTriangle className={cn('w-5 h-5', stats.overdue > 0 ? 'text-red-600' : 'text-gray-600')} />
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-yellow-100 rounded-lg shrink-0">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">En retard</p>
-              <p className={cn('text-xl font-bold', stats.overdue > 0 ? 'text-red-600' : 'text-gray-900')}>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">En cours</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{stats.inProgress}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', stats.overdue > 0 ? 'bg-red-100' : 'bg-gray-100')}>
+              <AlertTriangle className={cn('w-4 h-4 sm:w-5 sm:h-5', stats.overdue > 0 ? 'text-red-600' : 'text-gray-600')} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">En retard</p>
+              <p className={cn('text-lg sm:text-xl font-bold', stats.overdue > 0 ? 'text-red-600' : 'text-gray-900')}>
                 {stats.overdue}
               </p>
             </div>
@@ -228,14 +230,14 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <span className="font-medium text-gray-700">Progression</span>
-          <span className="text-lg font-bold text-primary-600">{progress}%</span>
+          <span className="text-sm sm:text-base font-medium text-gray-700">Progression</span>
+          <span className="text-base sm:text-lg font-bold text-primary-600">{progress}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
           <div
-            className="bg-primary-600 h-3 rounded-full transition-all duration-500"
+            className="bg-primary-600 h-2 sm:h-3 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -243,13 +245,13 @@ export default function ProjectDetailPage() {
 
       {/* Tasks Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-200 gap-4">
-          <h2 className="font-semibold text-gray-900">Tâches</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border-b border-gray-200 gap-3 sm:gap-4">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900">Tâches</h2>
           <div className="flex flex-wrap gap-2">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as TaskStatus | 'all')}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg"
             >
               <option value="all">Tous les statuts</option>
               {Object.entries(statusLabels).map(([value, label]) => (
@@ -259,7 +261,7 @@ export default function ProjectDetailPage() {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value as Priority | 'all')}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg"
             >
               <option value="all">Toutes priorités</option>
               {Object.entries(priorityLabels).map(([value, label]) => (
@@ -268,17 +270,18 @@ export default function ProjectDetailPage() {
             </select>
             <button
               onClick={() => setShowTaskForm(true)}
-              className="flex items-center gap-2 px-4 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs sm:text-sm"
             >
-              <Plus className="w-4 h-4" />
-              Ajouter
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Ajouter</span>
+              <span className="sm:hidden">+</span>
             </button>
           </div>
         </div>
 
         <div className="divide-y divide-gray-100">
           {filteredTasks.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-6 sm:p-8 text-center text-xs sm:text-sm text-gray-500">
               {filterStatus !== 'all' || filterPriority !== 'all'
                 ? 'Aucune tâche ne correspond aux filtres'
                 : 'Aucune tâche dans ce projet'}
@@ -291,39 +294,39 @@ export default function ProjectDetailPage() {
               const completedSubtasks = task.subtasks.filter((s) => s.completed).length;
 
               return (
-                <div key={task.id} className="p-4">
-                  <div className="flex items-start gap-3">
+                <div key={task.id} className="p-3 sm:p-4">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <button
                       onClick={() => handleToggleTaskStatus(task)}
                       className={cn(
-                        'mt-1 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                        'mt-0.5 sm:mt-1 w-4 h-4 sm:w-5 sm:h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
                         task.status === 'completed'
                           ? 'bg-green-500 border-green-500 text-white'
                           : 'border-gray-300 hover:border-primary-500'
                       )}
                     >
-                      {task.status === 'completed' && <Check className="w-3 h-3" />}
+                      {task.status === 'completed' && <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" />}
                     </button>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             {hasSubtasks && (
                               <button
                                 onClick={() => toggleExpand(task.id)}
-                                className="p-0.5 text-gray-400 hover:text-gray-600"
+                                className="p-0.5 text-gray-400 hover:text-gray-600 shrink-0"
                               >
                                 {isExpanded ? (
-                                  <ChevronDown className="w-4 h-4" />
+                                  <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                                 ) : (
-                                  <ChevronRight className="w-4 h-4" />
+                                  <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
                                 )}
                               </button>
                             )}
                             <h3
                               className={cn(
-                                'font-medium',
+                                'text-sm sm:text-base font-medium',
                                 task.status === 'completed' ? 'text-gray-400 line-through' : 'text-gray-900'
                               )}
                             >
@@ -331,7 +334,7 @@ export default function ProjectDetailPage() {
                             </h3>
                           </div>
                           {task.description && (
-                            <p className="text-sm text-gray-500 mt-1">{task.description}</p>
+                            <p className="text-xs sm:text-sm text-gray-500 mt-1">{task.description}</p>
                           )}
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className={cn('text-xs px-2 py-0.5 rounded-full', statusColors[task.status])}>
@@ -353,23 +356,23 @@ export default function ProjectDetailPage() {
                           </div>
                         </div>
 
-                        <div className="relative">
+                        <div className="relative shrink-0">
                           <button
                             onClick={() => setMenuOpen(menuOpen === task.id ? null : task.id)}
                             className="p-1 text-gray-400 hover:text-gray-600 rounded"
                           >
-                            <MoreVertical className="w-5 h-5" />
+                            <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
                           </button>
                           {menuOpen === task.id && (
-                            <div className="absolute right-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                            <div className="absolute right-0 mt-1 w-32 sm:w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                               <button
                                 onClick={() => {
                                   setEditingTask(task);
                                   setMenuOpen(null);
                                 }}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                className="flex items-center gap-2 w-full px-2 sm:px-3 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-50"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                                 Modifier
                               </button>
                               <button
@@ -377,9 +380,9 @@ export default function ProjectDetailPage() {
                                   setConfirmDelete(task);
                                   setMenuOpen(null);
                                 }}
-                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                                className="flex items-center gap-2 w-full px-2 sm:px-3 py-2 text-xs sm:text-sm text-red-600 hover:bg-red-50"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                                 Supprimer
                               </button>
                             </div>
@@ -389,23 +392,23 @@ export default function ProjectDetailPage() {
 
                       {/* Subtasks */}
                       {isExpanded && hasSubtasks && (
-                        <div className="mt-3 pl-6 space-y-2">
+                        <div className="mt-2 sm:mt-3 pl-4 sm:pl-6 space-y-1.5 sm:space-y-2">
                           {task.subtasks.map((subtask) => (
-                            <div key={subtask.id} className="flex items-center gap-2">
+                            <div key={subtask.id} className="flex items-center gap-1.5 sm:gap-2">
                               <button
                                 onClick={() => handleToggleSubtask(task, subtask.id)}
                                 className={cn(
-                                  'w-4 h-4 rounded border flex items-center justify-center shrink-0',
+                                  'w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border flex items-center justify-center shrink-0',
                                   subtask.completed
                                     ? 'bg-green-500 border-green-500 text-white'
                                     : 'border-gray-300'
                                 )}
                               >
-                                {subtask.completed && <Check className="w-2.5 h-2.5" />}
+                                {subtask.completed && <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5" />}
                               </button>
                               <span
                                 className={cn(
-                                  'text-sm',
+                                  'text-xs sm:text-sm',
                                   subtask.completed ? 'text-gray-400 line-through' : 'text-gray-700'
                                 )}
                               >
@@ -477,16 +480,16 @@ export default function ProjectDetailPage() {
           <p className="text-gray-600">
             Êtes-vous sûr de vouloir supprimer la tâche &quot;{confirmDelete?.title}&quot; ?
           </p>
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2 sm:gap-3">
             <button
               onClick={() => setConfirmDelete(null)}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:bg-gray-100 rounded-lg"
             >
               Annuler
             </button>
             <button
               onClick={handleDeleteTask}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Supprimer
             </button>
@@ -505,16 +508,16 @@ export default function ProjectDetailPage() {
           <p className="text-gray-600">
             Êtes-vous sûr de vouloir supprimer le projet &quot;{project.name}&quot; et toutes ses tâches ?
           </p>
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2 sm:gap-3">
             <button
               onClick={() => setConfirmDeleteProject(false)}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:bg-gray-100 rounded-lg"
             >
               Annuler
             </button>
             <button
               onClick={handleDeleteProject}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Supprimer
             </button>
