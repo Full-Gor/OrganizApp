@@ -306,9 +306,9 @@ export default function RushPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
             <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -386,7 +386,7 @@ export default function RushPage() {
 
       {/* Rush selector if multiple rushes */}
       {rushes.length > 0 && (
-        <div className="mb-6 flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {rushes.map(rush => (
             <RushTab
               key={rush.id}
