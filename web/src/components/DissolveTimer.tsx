@@ -8,6 +8,14 @@ interface DissolveTimerProps {
   className?: string;
 }
 
+interface Particle {
+  id: number;
+  x: number;
+  y: number;
+  angle: number;
+  distance: number;
+}
+
 export default function DissolveTimer({ theme, className }: DissolveTimerProps) {
   const [time, setTime] = useState({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
   const prevTimeRef = useRef({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
@@ -103,6 +111,33 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
     );
   }
 
+  if (theme === 'dissolve') {
+    return (
+      <div
+        className={cn('relative rounded-lg overflow-hidden border', className)}
+        style={{
+          background: 'linear-gradient(145deg, #1a1510, #0f0d0a)',
+          borderColor: 'rgba(255, 215, 0, 0.2)',
+          padding: '12px 16px',
+        }}
+      >
+        <div className="flex justify-center items-center gap-1">
+          {(['h0', 'h1'] as const).map((key) => (
+            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+          ))}
+          <DissolveColon />
+          {(['m0', 'm1'] as const).map((key) => (
+            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+          ))}
+          <DissolveColon />
+          {(['s0', 's1'] as const).map((key) => (
+            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // Fluid theme
   return (
     <div
@@ -150,21 +185,6 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
   const [nextValue, setNextValue] = useState(value);
   const prevValueRef = useRef(value);
 
-  // Color scheme based on light/dark mode
-  const colors = light ? {
-    topBg: 'linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%)',
-    bottomBg: 'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
-    topFlapBackBg: 'linear-gradient(180deg, #e0e0e0 0%, #d8d8d8 100%)',
-    digitColor: '#1a1a1a',
-    textShadow: '1px 1px 2px rgba(255,255,255,0.5)',
-  } : {
-    topBg: 'linear-gradient(180deg, #1e1e1e 0%, #141414 100%)',
-    bottomBg: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
-    topFlapBackBg: 'linear-gradient(180deg, #0a0a0a 0%, #151515 100%)',
-    digitColor: '#e8e8e8',
-    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-  };
-
   useEffect(() => {
     if (isChanging && value !== prevValueRef.current) {
       setNextValue(value);
@@ -181,6 +201,31 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
     }
   }, [isChanging, value]);
 
+  // Color schemes for light and dark modes
+  const colors = light ? {
+    bg: '#eee',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1), inset 0 0 0 3px #ddd, inset 0 0 20px rgba(0,0,0,0.05)',
+    centerLineBg: 'linear-gradient(90deg, #e0e0e0, #f0f0f0, #e0e0e0)',
+    centerLineShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    rivetBg: 'radial-gradient(circle at 30% 30%, #ccc, #aaa)',
+    topHalfBg: 'linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%)',
+    bottomHalfBg: 'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
+    topFlapBackBg: 'linear-gradient(180deg, #e0e0e0 0%, #d8d8d8 100%)',
+    digitColor: '#1a1a1a',
+    textShadow: '1px 1px 2px rgba(255,255,255,0.5)',
+  } : {
+    bg: '#111',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 0 0 3px #222, inset 0 0 20px rgba(0,0,0,0.5)',
+    centerLineBg: 'linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a)',
+    centerLineShadow: '0 1px 2px rgba(0,0,0,0.8)',
+    rivetBg: 'radial-gradient(circle at 30% 30%, #444, #111)',
+    topHalfBg: 'linear-gradient(180deg, #1e1e1e 0%, #141414 100%)',
+    bottomHalfBg: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
+    topFlapBackBg: 'linear-gradient(180deg, #0a0a0a 0%, #151515 100%)',
+    digitColor: '#e8e8e8',
+    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+  };
+
   return (
     <div
       className="relative"
@@ -194,10 +239,8 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
       <div
         className="relative w-full h-full rounded-lg"
         style={{
-          background: light ? '#fff' : '#111',
-          boxShadow: light
-            ? '0 4px 8px rgba(0,0,0,0.15), inset 0 0 0 3px #ddd, inset 0 0 20px rgba(0,0,0,0.05)'
-            : '0 4px 8px rgba(0,0,0,0.4), inset 0 0 0 3px #222, inset 0 0 20px rgba(0,0,0,0.5)',
+          background: colors.bg,
+          boxShadow: colors.boxShadow,
           filter: isFlipping ? 'brightness(1.1)' : 'brightness(1)',
           transition: 'filter 0.05s',
         }}
@@ -208,10 +251,8 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           style={{
             top: '50%',
             height: '3px',
-            background: light
-              ? 'linear-gradient(90deg, #d0d0d0, #e0e0e0, #d0d0d0)'
-              : 'linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a)',
-            boxShadow: light ? '0 1px 2px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.8)',
+            background: colors.centerLineBg,
+            boxShadow: colors.centerLineShadow,
           }}
         />
 
@@ -223,9 +264,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
             left: '4px',
             width: '6px',
             height: '6px',
-            background: light
-              ? 'radial-gradient(circle at 30% 30%, #999, #666)'
-              : 'radial-gradient(circle at 30% 30%, #444, #111)',
+            background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
         />
@@ -236,9 +275,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
             right: '4px',
             width: '6px',
             height: '6px',
-            background: light
-              ? 'radial-gradient(circle at 30% 30%, #999, #666)'
-              : 'radial-gradient(circle at 30% 30%, #444, #111)',
+            background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
         />
@@ -249,7 +286,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           style={{
             top: 0,
             height: '50%',
-            background: colors.topBg,
+            background: colors.topHalfBg,
             borderRadius: '8px 8px 0 0',
           }}
         >
@@ -275,7 +312,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           style={{
             bottom: 0,
             height: '50%',
-            background: colors.bottomBg,
+            background: colors.bottomHalfBg,
             borderRadius: '0 0 8px 8px',
           }}
         >
@@ -310,7 +347,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           <div
             className="absolute w-full h-full overflow-hidden flex justify-center items-end"
             style={{
-              background: colors.topBg,
+              background: colors.topHalfBg,
               borderRadius: '8px 8px 0 0',
               backfaceVisibility: 'hidden',
             }}
@@ -372,7 +409,7 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           <div
             className="absolute w-full h-full overflow-hidden flex justify-center items-start"
             style={{
-              background: colors.bottomBg,
+              background: colors.bottomHalfBg,
               borderRadius: '0 0 8px 8px',
               backfaceVisibility: 'hidden',
             }}
@@ -416,7 +453,7 @@ function SplitFlapColon({ light = false }: { light?: boolean }) {
         fontSize: '44px',
         fontWeight: 'bold',
         color: light ? '#1a1a1a' : '#e8e8e8',
-        textShadow: light ? '0 1px 2px rgba(255,255,255,0.5)' : '0 2px 4px rgba(0,0,0,0.5)',
+        textShadow: light ? '0 2px 4px rgba(255,255,255,0.5)' : '0 2px 4px rgba(0,0,0,0.5)',
         animation: 'flapBlink 1s infinite',
         padding: '0 3px',
       }}
@@ -429,6 +466,85 @@ function SplitFlapColon({ light = false }: { light?: boolean }) {
         }
       `}</style>
     </span>
+  );
+}
+
+// Dissolve Digit Component
+function DissolveDigit({ value, isChanging }: { value: string; isChanging: boolean }) {
+  const particlesRef = useRef<Particle[]>(
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 35,
+      y: Math.random() * 50,
+      angle: Math.random() * Math.PI * 2,
+      distance: 30 + Math.random() * 40,
+    }))
+  );
+
+  return (
+    <div className="relative" style={{ width: '35px', height: '50px' }}>
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-all"
+        style={{
+          fontFamily: 'var(--font-orbitron), Orbitron, monospace',
+          fontSize: '2rem',
+          fontWeight: 900,
+          color: '#ffd700',
+          opacity: isChanging ? 0 : 1,
+          transform: isChanging ? 'scale(0.8)' : 'scale(1)',
+          transitionDuration: '0.3s',
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+
+      {particlesRef.current.map((particle) => (
+        <div
+          key={particle.id}
+          className="absolute w-1 h-1 rounded-full pointer-events-none"
+          style={{
+            background: '#ffd700',
+            boxShadow: '0 0 6px #ffd700',
+            left: `${particle.x}px`,
+            top: `${particle.y}px`,
+            opacity: isChanging ? 1 : 0,
+            transform: isChanging
+              ? `translate(${Math.cos(particle.angle) * particle.distance}px, ${Math.sin(particle.angle) * particle.distance}px)`
+              : 'translate(0, 0)',
+            transition: isChanging
+              ? 'all 0.4s ease-out'
+              : 'all 0.3s ease-in 0.3s',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Dissolve Colon Component
+function DissolveColon() {
+  return (
+    <div className="flex flex-col justify-center" style={{ gap: '8px', height: '50px' }}>
+      <div
+        className="rounded-full"
+        style={{
+          width: '4px',
+          height: '4px',
+          background: '#ffd700',
+          boxShadow: '0 0 6px #ffd700',
+        }}
+      />
+      <div
+        className="rounded-full"
+        style={{
+          width: '4px',
+          height: '4px',
+          background: '#ffd700',
+          boxShadow: '0 0 6px #ffd700',
+        }}
+      />
+    </div>
   );
 }
 

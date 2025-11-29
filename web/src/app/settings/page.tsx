@@ -140,59 +140,59 @@ export default function SettingsPage() {
   const maxWeeklyCount = Math.max(...stats.weeklyCompletion.map((d) => d.count), 1);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Paramètres & Statistiques</h1>
-        <p className="text-gray-500 mt-1">Gérez vos données et consultez vos statistiques</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Paramètres & Statistiques</h1>
+        <p className="text-sm sm:text-base text-gray-500 mt-1">Gérez vos données et consultez vos statistiques</p>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BarChart3 className="w-5 h-5 text-blue-600" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg shrink-0">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Projets actifs</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeProjects}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Taux de complétion</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.completionRate}%</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">Projets actifs</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.activeProjects}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="w-5 h-5 text-yellow-600" />
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg shrink-0">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">En cours</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.inProgressTasks}</p>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">Taux complétion</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.completionRate}%</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2 rounded-lg', stats.overdueTasks > 0 ? 'bg-red-100' : 'bg-gray-100')}>
-              <AlertCircle className={cn('w-5 h-5', stats.overdueTasks > 0 ? 'text-red-600' : 'text-gray-600')} />
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-yellow-100 rounded-lg shrink-0">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500">En retard</p>
-              <p className={cn('text-2xl font-bold', stats.overdueTasks > 0 ? 'text-red-600' : 'text-gray-900')}>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">En cours</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.inProgressTasks}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className={cn('p-1.5 sm:p-2 rounded-lg shrink-0', stats.overdueTasks > 0 ? 'bg-red-100' : 'bg-gray-100')}>
+              <AlertCircle className={cn('w-4 h-4 sm:w-5 sm:h-5', stats.overdueTasks > 0 ? 'text-red-600' : 'text-gray-600')} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs sm:text-sm text-gray-500">En retard</p>
+              <p className={cn('text-lg sm:text-2xl font-bold', stats.overdueTasks > 0 ? 'text-red-600' : 'text-gray-900')}>
                 {stats.overdueTasks}
               </p>
             </div>
@@ -200,12 +200,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Tasks Distribution */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChart className="w-5 h-5 text-primary-600" />
-            <h2 className="font-semibold text-gray-900">Répartition des tâches</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <PieChart className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Répartition des tâches</h2>
           </div>
 
           <div className="space-y-4">
@@ -254,10 +254,10 @@ export default function SettingsPage() {
         </div>
 
         {/* Weekly Activity */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-primary-600" />
-            <h2 className="font-semibold text-gray-900">Activité de la semaine</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Activité de la semaine</h2>
           </div>
 
           <div className="flex items-end justify-between h-40 gap-2">
@@ -282,26 +282,26 @@ export default function SettingsPage() {
         </div>
 
         {/* Projects Progress */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Progression par projet</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <h2 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">Progression par projet</h2>
 
           {stats.tasksByProject.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Aucun projet</p>
+            <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">Aucun projet</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {stats.tasksByProject.map((project, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="w-2 h-2 sm:w-3 sm:h-3 rounded-full shrink-0"
                         style={{ backgroundColor: project.color }}
                       />
-                      <span className="text-sm font-medium text-gray-700 truncate">
+                      <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
                         {project.name}
                       </span>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs sm:text-sm text-gray-500 ml-2">
                       {project.completed}/{project.total}
                     </span>
                   </div>
@@ -321,16 +321,16 @@ export default function SettingsPage() {
         </div>
 
         {/* Data Management */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Database className="w-5 h-5 text-primary-600" />
-            <h2 className="font-semibold text-gray-900">Gestion des données</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+            <Database className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+            <h2 className="text-sm sm:text-base font-semibold text-gray-900">Gestion des données</h2>
           </div>
 
-          <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">Stockage actuel:</p>
-              <ul className="text-sm text-gray-700 space-y-1">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-600 mb-2">Stockage actuel:</p>
+              <ul className="text-xs sm:text-sm text-gray-700 space-y-1">
                 <li>{projects.length} projet(s)</li>
                 <li>{tasks.length} tâche(s)</li>
                 <li>{watchItems.length} élément(s) de veille</li>
@@ -339,21 +339,23 @@ export default function SettingsPage() {
             </div>
 
             {importError && (
-              <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">{importError}</div>
+              <div className="p-2 sm:p-3 bg-red-50 text-red-600 rounded-lg text-xs sm:text-sm">{importError}</div>
             )}
 
             <div className="space-y-2">
               <button
                 onClick={handleExportData}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm"
               >
-                <Download className="w-5 h-5" />
-                Exporter les données
+                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Exporter les données</span>
+                <span className="sm:hidden">Exporter</span>
               </button>
 
-              <label className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                <Upload className="w-5 h-5" />
-                Importer des données
+              <label className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer text-xs sm:text-sm">
+                <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Importer des données</span>
+                <span className="sm:hidden">Importer</span>
                 <input
                   type="file"
                   accept=".json"
@@ -364,10 +366,11 @@ export default function SettingsPage() {
 
               <button
                 onClick={() => setConfirmClear(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-xs sm:text-sm"
               >
-                <Trash2 className="w-5 h-5" />
-                Effacer toutes les données
+                <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Effacer toutes les données</span>
+                <span className="sm:hidden">Effacer</span>
               </button>
             </div>
           </div>
@@ -385,16 +388,16 @@ export default function SettingsPage() {
           <p className="text-gray-600">
             Êtes-vous sûr de vouloir effacer toutes vos données ? Cette action est irréversible.
           </p>
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2 sm:gap-3">
             <button
               onClick={() => setConfirmClear(false)}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 hover:bg-gray-100 rounded-lg"
             >
               Annuler
             </button>
             <button
               onClick={handleClearData}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Effacer
             </button>

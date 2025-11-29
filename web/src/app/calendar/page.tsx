@@ -90,19 +90,19 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Calendrier</h1>
-          <p className="text-gray-500 mt-1">Visualisez vos échéances</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Calendrier</h1>
+          <p className="text-sm sm:text-base text-gray-500 mt-1">Visualisez vos échéances</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('month')}
               className={cn(
-                'px-3 py-1.5 text-sm',
+                'px-2 sm:px-3 py-1.5 text-xs sm:text-sm',
                 viewMode === 'month' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'
               )}
             >
@@ -111,7 +111,7 @@ export default function CalendarPage() {
             <button
               onClick={() => setViewMode('week')}
               className={cn(
-                'px-3 py-1.5 text-sm',
+                'px-2 sm:px-3 py-1.5 text-xs sm:text-sm',
                 viewMode === 'week' ? 'bg-primary-100 text-primary-600' : 'text-gray-600 hover:bg-gray-50'
               )}
             >
@@ -120,40 +120,41 @@ export default function CalendarPage() {
           </div>
           <button
             onClick={handleAddTask}
-            className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm sm:text-base"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="hidden sm:inline">Ajouter une échéance</span>
+            <span className="sm:hidden">Ajouter</span>
           </button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Calendar */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
           {/* Calendar Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
             <button
               onClick={handlePrevMonth}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
-            <h2 className="text-lg font-semibold text-gray-900 capitalize">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 capitalize">
               {format(currentMonth, 'MMMM yyyy', { locale: fr })}
             </h2>
             <button
               onClick={handleNextMonth}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 border-b border-gray-200">
             {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
-              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+              <div key={day} className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500">
                 {day}
               </div>
             ))}
@@ -260,10 +261,10 @@ export default function CalendarPage() {
 
         {/* Selected Date Panel */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-3 sm:p-4 border-b border-gray-200">
             <div className="flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-primary-600" />
-              <h3 className="font-semibold text-gray-900">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+              <h3 className="text-sm sm:text-base font-semibold text-gray-900">
                 {selectedDate
                   ? format(selectedDate, 'EEEE d MMMM', { locale: fr })
                   : "Sélectionnez une date"}
@@ -271,40 +272,40 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
             {!selectedDate ? (
-              <p className="text-gray-500 text-center py-8">
+              <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">
                 Cliquez sur une date pour voir les tâches
               </p>
             ) : selectedDateTasks.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Aucune tâche pour cette date</p>
+              <div className="text-center py-6 sm:py-8">
+                <p className="text-xs sm:text-sm text-gray-500">Aucune tâche pour cette date</p>
                 <button
                   onClick={handleAddTask}
-                  className="mt-4 text-primary-600 hover:text-primary-700"
+                  className="mt-3 sm:mt-4 text-xs sm:text-sm text-primary-600 hover:text-primary-700"
                 >
                   Ajouter une tâche
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {selectedDateTasks.map((task) => {
                   const project = projects.find((p) => p.id === task.projectId);
                   return (
                     <div
                       key={task.id}
-                      className="p-3 rounded-lg border border-gray-200 hover:border-gray-300"
+                      className="p-2 sm:p-3 rounded-lg border border-gray-200 hover:border-gray-300"
                     >
                       <div className="flex items-start gap-2">
                         <div
-                          className="w-3 h-3 rounded-full mt-1 shrink-0"
+                          className="w-2 h-2 sm:w-3 sm:h-3 rounded-full mt-1 shrink-0"
                           style={{ backgroundColor: project?.color || '#3b82f6' }}
                         />
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">
+                          <h4 className="text-sm sm:text-base font-medium text-gray-900 truncate">
                             {task.title}
                           </h4>
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">
                             {project?.name || 'Projet inconnu'}
                           </p>
                           <span
@@ -322,7 +323,7 @@ export default function CalendarPage() {
                 })}
                 <button
                   onClick={handleAddTask}
-                  className="w-full py-2 text-primary-600 hover:bg-primary-50 rounded-lg text-sm"
+                  className="w-full py-2 text-xs sm:text-sm text-primary-600 hover:bg-primary-50 rounded-lg"
                 >
                   + Ajouter une tâche
                 </button>

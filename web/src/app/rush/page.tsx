@@ -306,32 +306,31 @@ export default function RushPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        {/* Left: Title and subtitle */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-            <Zap className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Rush Mode</h1>
-            <p className="text-sm text-gray-500">Gestion multi-projets en parallele</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Rush Mode</h1>
+            <p className="text-xs sm:text-sm text-gray-500">Gestion multi-projets en parallele</p>
           </div>
         </div>
 
-        {/* Center: Clock and theme buttons */}
+        {/* Clock Display and Theme Switcher - Mobile: centered row, Desktop: right aligned */}
         {activeRush && (
-          <div className="flex items-center gap-2">
-            <DissolveTimer theme={activeRush.clockTheme || 'fluid'} />
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-2">
+            <DissolveTimer theme={activeRush.clockTheme || 'fluid'} className="scale-90 sm:scale-100" />
 
             {/* Theme Switcher Buttons */}
             <div className="flex gap-1.5 items-center">
               <button
                 onClick={() => handleUpdateClockTheme('fluid')}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  (activeRush.clockTheme || 'fluid') === 'fluid'
+                  'px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                  activeRush.clockTheme === 'fluid'
                     ? 'bg-[#00f5ff] text-[#0a192f] shadow-lg'
                     : 'bg-white text-gray-700 border border-gray-200 hover:border-[#00f5ff]'
                 )}
@@ -341,10 +340,10 @@ export default function RushPage() {
               <button
                 onClick={() => handleUpdateClockTheme('flap')}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  'px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
                   activeRush.clockTheme === 'flap'
-                    ? 'bg-[#2c2c2c] text-[#e8e8e8] shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#2c2c2c]'
+                    ? 'bg-[#e8e8e8] text-[#1a1a1a] shadow-lg'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#e8e8e8]'
                 )}
               >
                 Flap
@@ -352,35 +351,35 @@ export default function RushPage() {
               <button
                 onClick={() => handleUpdateClockTheme('flap-light')}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                  'px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
                   activeRush.clockTheme === 'flap-light'
-                    ? 'bg-[#f5f5f5] text-[#1a1a1a] shadow-lg border border-gray-300'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:border-[#f5f5f5]'
+                    ? 'bg-white text-[#1a1a1a] shadow-lg border-2 border-gray-300'
+                    : 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
                 )}
               >
-                Flap Light
+                Light
               </button>
             </div>
           </div>
         )}
 
-        {/* Right: Stats and New Rush buttons */}
+        {/* Action Buttons */}
         <div className="flex gap-2">
           {activeRush && (
             <button
               onClick={() => setShowStatsModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
             >
               <BarChart3 className="w-4 h-4" />
-              Stats
+              <span className="hidden sm:inline">Stats</span>
             </button>
           )}
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
           >
             <Plus className="w-4 h-4" />
-            Nouveau Rush
+            <span className="hidden sm:inline">Nouveau Rush</span>
           </button>
         </div>
       </div>
@@ -699,11 +698,11 @@ function RushBoard({
   return (
     <div className="space-y-6">
       {/* Task Controls */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-4">
             {currentStep && (
-              <div className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+              <div className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs sm:text-sm font-medium truncate">
                 Tache actuelle: {currentStep.title}
               </div>
             )}
@@ -712,33 +711,33 @@ function RushBoard({
             <button
               onClick={onTogglePause}
               className={cn(
-                'p-3 rounded-lg transition-colors',
+                'p-2 sm:p-3 rounded-lg transition-colors flex-shrink-0',
                 rush.status === 'paused' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               )}
             >
-              {rush.status === 'paused' ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+              {rush.status === 'paused' ? <Play className="w-4 h-4 sm:w-5 sm:h-5" /> : <Pause className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
             <button
               onClick={onSkipTask}
-              className="flex items-center gap-2 px-4 py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors font-medium"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors font-medium text-sm flex-1 sm:flex-initial justify-center"
               title="Passer cette tache"
             >
-              <SkipForward className="w-5 h-5" />
-              Passer
+              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden xs:inline">Passer</span>
             </button>
             <button
               onClick={onCompleteTask}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm flex-1 sm:flex-initial justify-center"
             >
-              <Check className="w-5 h-5" />
-              Termine
+              <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden xs:inline">Termine</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Project Tabs (within current Rush) */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
         {rush.projects.map((project) => {
           const isActive = project.id === rush.activeProjectId;
           const isCompleted = project.tasks.every(t => t.status === 'completed' || t.status === 'skipped');
@@ -750,7 +749,7 @@ function RushBoard({
             <div
               key={project.id}
               className={cn(
-                'relative flex flex-col items-center px-4 py-3 rounded-xl min-w-[120px] transition-all border-2',
+                'relative flex flex-col items-center px-3 sm:px-4 py-2 sm:py-3 rounded-xl min-w-[100px] sm:min-w-[120px] transition-all border-2 flex-shrink-0',
                 isActive
                   ? 'bg-orange-50 border-orange-500 shadow-lg shadow-orange-500/20'
                   : isCompleted
@@ -771,7 +770,7 @@ function RushBoard({
                 )}
                 title="Notes du projet"
               >
-                <FileText className="w-3.5 h-3.5" />
+                <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
 
               <div
@@ -779,7 +778,7 @@ function RushBoard({
                 onClick={() => onActivateProject(project.id)}
               >
                 <span className={cn(
-                  'font-medium text-sm',
+                  'font-medium text-xs sm:text-sm text-center',
                   isActive ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
                 )}>
                   {project.name}
@@ -807,18 +806,18 @@ function RushBoard({
 
       {/* Active Project Tasks */}
       {activeProject && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-3 sm:p-6 shadow-sm border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500" />
                 {activeProject.name}
               </h3>
 
               {/* Session Timer */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-mono text-blue-900">
+              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-600" />
+                <span className="text-xs sm:text-sm font-mono text-blue-900">
                   {rushStorage.formatTime(rushStorage.getCurrentSessionTime(activeProject))}
                 </span>
                 <button
@@ -829,14 +828,14 @@ function RushBoard({
                   className="p-0.5 hover:bg-blue-200 rounded transition-colors"
                   title="Reset session timer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
+                  <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
                 </button>
               </div>
 
               {/* Total Time across all sessions */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
                 <span className="text-xs text-gray-500">Total:</span>
-                <span className="text-sm font-mono text-gray-700">
+                <span className="text-xs sm:text-sm font-mono text-gray-700">
                   {rushStorage.formatTime(rushStorage.getProjectTotalTime(activeProject))}
                 </span>
               </div>
@@ -844,7 +843,7 @@ function RushBoard({
 
             <button
               onClick={() => onResetProject(activeProject.id)}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors self-start sm:self-auto"
               title="Remettre les taches a zero"
             >
               <RotateCcw className="w-4 h-4" />
@@ -884,7 +883,7 @@ function RushBoard({
                       setDragOverIndex(null);
                     }}
                     className={cn(
-                      'flex items-center gap-2 p-3 rounded-lg transition-all',
+                      'flex items-center gap-1.5 sm:gap-2 p-2 sm:p-3 rounded-lg transition-all',
                       isCurrentTask
                         ? 'bg-orange-50 border-2 border-orange-300'
                         : isCompleted
@@ -896,14 +895,14 @@ function RushBoard({
                       isDragOver && 'border-2 border-dashed border-orange-400'
                     )}
                   >
-                    {/* Drag handle */}
-                    <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none">
+                    {/* Drag handle - hide on mobile */}
+                    <div className="hidden sm:block cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 touch-none">
                       <GripVertical className="w-4 h-4" />
                     </div>
 
                     {/* Status indicator */}
                     <div className={cn(
-                      'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                      'w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0',
                       isCurrentTask
                         ? 'bg-orange-500 text-white'
                         : isCompleted
@@ -913,11 +912,11 @@ function RushBoard({
                         : 'bg-gray-200 text-gray-500'
                     )}>
                       {isCompleted ? (
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                       ) : isSkipped ? (
-                        <SkipForward className="w-4 h-4" />
+                        <SkipForward className="w-3 h-3 sm:w-4 sm:h-4" />
                       ) : (
-                        <span className="text-sm font-medium">{index + 1}</span>
+                        <span className="text-xs sm:text-sm font-medium">{index + 1}</span>
                       )}
                     </div>
 
@@ -945,13 +944,13 @@ function RushBoard({
                               setEditingTaskIndex(null);
                             }
                           }}
-                          className="w-full px-2 py-1 border border-orange-300 rounded text-sm font-medium"
+                          className="w-full px-2 py-1 border border-orange-300 rounded text-xs sm:text-sm font-medium"
                           autoFocus
                         />
                       ) : (
                         <div
                           className={cn(
-                            'font-medium truncate cursor-pointer hover:underline',
+                            'font-medium truncate cursor-pointer hover:underline text-xs sm:text-sm',
                             isCurrentTask ? 'text-orange-700' : isCompleted ? 'text-green-700' : 'text-gray-700'
                           )}
                           onDoubleClick={() => {
@@ -966,42 +965,16 @@ function RushBoard({
                       {/* Show notes if exists */}
                       {task.notes && (
                         <div className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
+                          <FileText className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                           <span className="truncate">{task.notes.length > 30 ? task.notes.substring(0, 30) + '...' : task.notes}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Edit task name button */}
-                    <button
-                      onClick={() => {
-                        setEditingTaskIndex(index);
-                        setEditTaskTitle(step.title);
-                      }}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                      title="Renommer la tache"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-
-                    {/* Notes button for current task */}
-                    {isCurrentTask && (
-                      <button
-                        onClick={() => {
-                          setEditingNotes(index);
-                          setNotesText(task.notes || '');
-                        }}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Ajouter une note"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </button>
-                    )}
-
                     {/* Time spent */}
                     {(isCompleted || isCurrentTask) && (
                       <div className={cn(
-                        'text-sm font-mono',
+                        'text-xs sm:text-sm font-mono flex-shrink-0',
                         isCurrentTask ? 'text-orange-600' : 'text-gray-500'
                       )}>
                         {isCurrentTask
@@ -1010,16 +983,45 @@ function RushBoard({
                       </div>
                     )}
 
-                    {/* Delete button */}
-                    {rush.workflow.length > 1 && (
+                    {/* Action buttons group - compact on mobile */}
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                      {/* Edit task name button */}
                       <button
-                        onClick={() => onDeleteTask(index)}
-                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Supprimer cette tache"
+                        onClick={() => {
+                          setEditingTaskIndex(index);
+                          setEditTaskTitle(step.title);
+                        }}
+                        className="p-1 sm:p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        title="Renommer la tache"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       </button>
-                    )}
+
+                      {/* Notes button for current task */}
+                      {isCurrentTask && (
+                        <button
+                          onClick={() => {
+                            setEditingNotes(index);
+                            setNotesText(task.notes || '');
+                          }}
+                          className="p-1 sm:p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Ajouter une note"
+                        >
+                          <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+
+                      {/* Delete button */}
+                      {rush.workflow.length > 1 && (
+                        <button
+                          onClick={() => onDeleteTask(index)}
+                          className="p-1 sm:p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer cette tache"
+                        >
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Insert task button */}
