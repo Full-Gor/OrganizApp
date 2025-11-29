@@ -8,14 +8,6 @@ interface DissolveTimerProps {
   className?: string;
 }
 
-interface Particle {
-  id: number;
-  x: number;
-  y: number;
-  angle: number;
-  distance: number;
-}
-
 export default function DissolveTimer({ theme, className }: DissolveTimerProps) {
   const [time, setTime] = useState({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
   const prevTimeRef = useRef({ h0: '0', h1: '0', m0: '0', m1: '0', s0: '0', s1: '0' });
@@ -105,33 +97,6 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
           <SplitFlapColon light={true} />
           {(['s0', 's1'] as const).map((key) => (
             <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={true} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (theme === 'dissolve') {
-    return (
-      <div
-        className={cn('relative rounded-lg overflow-hidden border', className)}
-        style={{
-          background: 'linear-gradient(145deg, #1a1510, #0f0d0a)',
-          borderColor: 'rgba(255, 215, 0, 0.2)',
-          padding: '12px 16px',
-        }}
-      >
-        <div className="flex justify-center items-center gap-1">
-          {(['h0', 'h1'] as const).map((key) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
-          ))}
-          <DissolveColon />
-          {(['m0', 'm1'] as const).map((key) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
-          ))}
-          <DissolveColon />
-          {(['s0', 's1'] as const).map((key) => (
-            <DissolveDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
           ))}
         </div>
       </div>
@@ -466,85 +431,6 @@ function SplitFlapColon({ light = false }: { light?: boolean }) {
         }
       `}</style>
     </span>
-  );
-}
-
-// Dissolve Digit Component
-function DissolveDigit({ value, isChanging }: { value: string; isChanging: boolean }) {
-  const particlesRef = useRef<Particle[]>(
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 35,
-      y: Math.random() * 50,
-      angle: Math.random() * Math.PI * 2,
-      distance: 30 + Math.random() * 40,
-    }))
-  );
-
-  return (
-    <div className="relative" style={{ width: '35px', height: '50px' }}>
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all"
-        style={{
-          fontFamily: 'var(--font-orbitron), Orbitron, monospace',
-          fontSize: '2rem',
-          fontWeight: 900,
-          color: '#ffd700',
-          opacity: isChanging ? 0 : 1,
-          transform: isChanging ? 'scale(0.8)' : 'scale(1)',
-          transitionDuration: '0.3s',
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </div>
-
-      {particlesRef.current.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute w-1 h-1 rounded-full pointer-events-none"
-          style={{
-            background: '#ffd700',
-            boxShadow: '0 0 6px #ffd700',
-            left: `${particle.x}px`,
-            top: `${particle.y}px`,
-            opacity: isChanging ? 1 : 0,
-            transform: isChanging
-              ? `translate(${Math.cos(particle.angle) * particle.distance}px, ${Math.sin(particle.angle) * particle.distance}px)`
-              : 'translate(0, 0)',
-            transition: isChanging
-              ? 'all 0.4s ease-out'
-              : 'all 0.3s ease-in 0.3s',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Dissolve Colon Component
-function DissolveColon() {
-  return (
-    <div className="flex flex-col justify-center" style={{ gap: '8px', height: '50px' }}>
-      <div
-        className="rounded-full"
-        style={{
-          width: '4px',
-          height: '4px',
-          background: '#ffd700',
-          boxShadow: '0 0 6px #ffd700',
-        }}
-      />
-      <div
-        className="rounded-full"
-        style={{
-          width: '4px',
-          height: '4px',
-          background: '#ffd700',
-          boxShadow: '0 0 6px #ffd700',
-        }}
-      />
-    </div>
   );
 }
 
