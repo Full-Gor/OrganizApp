@@ -59,7 +59,11 @@ UN Rush = gestion multi-projets avec workflow (etapes). Utilise pour travailler 
   ]
 }, "response": "Rush cree avec workflow personnalise !"}
 
-- list_rushes, delete_rush
+- list_rushes (lister tous les Rush):
+{"action": "list_rushes", "response": "Voici tes Rush !"}
+
+- delete_rush (supprimer un Rush):
+{"action": "delete_rush", "data": {"rushName": "Nom du Rush"}, "response": "Rush supprime !"}
 
 == AUTRES ACTIONS ==
 - create_project, create_task, delete_task, delete_project, complete_task
