@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface DissolveTimerProps {
-  theme: 'dissolve' | 'fluid' | 'flap';
+  theme: 'fluid' | 'flap' | 'flap-light';
   className?: string;
 }
 
@@ -44,7 +44,7 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
 
       if (changed.size > 0) {
         setChangingDigits(changed);
-        const timeout = theme === 'dissolve' ? 700 : theme === 'fluid' ? 600 : 300;
+        const timeout = theme === 'fluid' ? 600 : 300;
         setTimeout(() => setChangingDigits(new Set()), timeout);
       }
 
@@ -69,15 +69,42 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
       >
         <div className="flex justify-center items-center gap-3">
           {(['h0', 'h1'] as const).map((key) => (
-            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={false} />
           ))}
-          <SplitFlapColon />
+          <SplitFlapColon light={false} />
           {(['m0', 'm1'] as const).map((key) => (
-            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={false} />
           ))}
-          <SplitFlapColon />
+          <SplitFlapColon light={false} />
           {(['s0', 's1'] as const).map((key) => (
-            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} />
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={false} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (theme === 'flap-light') {
+    return (
+      <div
+        className={cn('relative rounded-lg overflow-hidden', className)}
+        style={{
+          background: 'linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
+          padding: '12px 16px',
+        }}
+      >
+        <div className="flex justify-center items-center gap-3">
+          {(['h0', 'h1'] as const).map((key) => (
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={true} />
+          ))}
+          <SplitFlapColon light={true} />
+          {(['m0', 'm1'] as const).map((key) => (
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={true} />
+          ))}
+          <SplitFlapColon light={true} />
+          {(['s0', 's1'] as const).map((key) => (
+            <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={true} />
           ))}
         </div>
       </div>
@@ -152,7 +179,7 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
 }
 
 // Split Flap Digit Component
-function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: boolean }) {
+function SplitFlapDigit({ value, isChanging, light = false }: { value: string; isChanging: boolean; light?: boolean }) {
   const [isFlipping, setIsFlipping] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
   const [nextValue, setNextValue] = useState(value);
@@ -174,6 +201,31 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
     }
   }, [isChanging, value]);
 
+  // Color schemes for light and dark modes
+  const colors = light ? {
+    bg: '#eee',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1), inset 0 0 0 3px #ddd, inset 0 0 20px rgba(0,0,0,0.05)',
+    centerLineBg: 'linear-gradient(90deg, #e0e0e0, #f0f0f0, #e0e0e0)',
+    centerLineShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    rivetBg: 'radial-gradient(circle at 30% 30%, #ccc, #aaa)',
+    topHalfBg: 'linear-gradient(180deg, #f0f0f0 0%, #e8e8e8 100%)',
+    bottomHalfBg: 'linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%)',
+    topFlapBackBg: 'linear-gradient(180deg, #e0e0e0 0%, #d8d8d8 100%)',
+    digitColor: '#1a1a1a',
+    textShadow: '1px 1px 2px rgba(255,255,255,0.5)',
+  } : {
+    bg: '#111',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 0 0 3px #222, inset 0 0 20px rgba(0,0,0,0.5)',
+    centerLineBg: 'linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a)',
+    centerLineShadow: '0 1px 2px rgba(0,0,0,0.8)',
+    rivetBg: 'radial-gradient(circle at 30% 30%, #444, #111)',
+    topHalfBg: 'linear-gradient(180deg, #1e1e1e 0%, #141414 100%)',
+    bottomHalfBg: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
+    topFlapBackBg: 'linear-gradient(180deg, #0a0a0a 0%, #151515 100%)',
+    digitColor: '#e8e8e8',
+    textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+  };
+
   return (
     <div
       className="relative"
@@ -187,8 +239,8 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
       <div
         className="relative w-full h-full rounded-lg"
         style={{
-          background: '#111',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.4), inset 0 0 0 3px #222, inset 0 0 20px rgba(0,0,0,0.5)',
+          background: colors.bg,
+          boxShadow: colors.boxShadow,
           filter: isFlipping ? 'brightness(1.1)' : 'brightness(1)',
           transition: 'filter 0.05s',
         }}
@@ -199,8 +251,8 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           style={{
             top: '50%',
             height: '3px',
-            background: 'linear-gradient(90deg, #0a0a0a, #1a1a1a, #0a0a0a)',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.8)',
+            background: colors.centerLineBg,
+            boxShadow: colors.centerLineShadow,
           }}
         />
 
@@ -212,7 +264,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
             left: '4px',
             width: '6px',
             height: '6px',
-            background: 'radial-gradient(circle at 30% 30%, #444, #111)',
+            background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
         />
@@ -223,7 +275,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
             right: '4px',
             width: '6px',
             height: '6px',
-            background: 'radial-gradient(circle at 30% 30%, #444, #111)',
+            background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
         />
@@ -234,7 +286,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           style={{
             top: 0,
             height: '50%',
-            background: 'linear-gradient(180deg, #1e1e1e 0%, #141414 100%)',
+            background: colors.topHalfBg,
             borderRadius: '8px 8px 0 0',
           }}
         >
@@ -243,9 +295,9 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
               fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
               fontSize: '56px',
               fontWeight: 'bold',
-              color: '#e8e8e8',
+              color: colors.digitColor,
               lineHeight: '75px',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              textShadow: colors.textShadow,
               letterSpacing: '-2px',
               transform: 'translateY(50%)',
             }}
@@ -260,7 +312,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           style={{
             bottom: 0,
             height: '50%',
-            background: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
+            background: colors.bottomHalfBg,
             borderRadius: '0 0 8px 8px',
           }}
         >
@@ -269,9 +321,9 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
               fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
               fontSize: '56px',
               fontWeight: 'bold',
-              color: '#e8e8e8',
+              color: colors.digitColor,
               lineHeight: '75px',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              textShadow: colors.textShadow,
               letterSpacing: '-2px',
               transform: 'translateY(-50%)',
             }}
@@ -295,7 +347,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           <div
             className="absolute w-full h-full overflow-hidden flex justify-center items-end"
             style={{
-              background: 'linear-gradient(180deg, #1e1e1e 0%, #141414 100%)',
+              background: colors.topHalfBg,
               borderRadius: '8px 8px 0 0',
               backfaceVisibility: 'hidden',
             }}
@@ -305,9 +357,9 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
                 fontSize: '56px',
                 fontWeight: 'bold',
-                color: '#e8e8e8',
+                color: colors.digitColor,
                 lineHeight: '75px',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                textShadow: colors.textShadow,
                 letterSpacing: '-2px',
                 transform: 'translateY(50%)',
               }}
@@ -318,7 +370,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           <div
             className="absolute w-full h-full overflow-hidden flex justify-center items-start"
             style={{
-              background: 'linear-gradient(180deg, #0a0a0a 0%, #151515 100%)',
+              background: colors.topFlapBackBg,
               borderRadius: '8px 8px 0 0',
               backfaceVisibility: 'hidden',
               transform: 'rotateX(180deg)',
@@ -329,9 +381,9 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
                 fontSize: '56px',
                 fontWeight: 'bold',
-                color: '#e8e8e8',
+                color: colors.digitColor,
                 lineHeight: '75px',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                textShadow: colors.textShadow,
                 letterSpacing: '-2px',
                 transform: 'translateY(-50%)',
               }}
@@ -357,7 +409,7 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
           <div
             className="absolute w-full h-full overflow-hidden flex justify-center items-start"
             style={{
-              background: 'linear-gradient(180deg, #0f0f0f 0%, #1a1a1a 100%)',
+              background: colors.bottomHalfBg,
               borderRadius: '0 0 8px 8px',
               backfaceVisibility: 'hidden',
             }}
@@ -367,9 +419,9 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
                 fontSize: '56px',
                 fontWeight: 'bold',
-                color: '#e8e8e8',
+                color: colors.digitColor,
                 lineHeight: '75px',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                textShadow: colors.textShadow,
                 letterSpacing: '-2px',
                 transform: 'translateY(-50%)',
               }}
@@ -393,15 +445,15 @@ function SplitFlapDigit({ value, isChanging }: { value: string; isChanging: bool
 }
 
 // Split Flap Colon
-function SplitFlapColon() {
+function SplitFlapColon({ light = false }: { light?: boolean }) {
   return (
     <span
       style={{
         fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
         fontSize: '44px',
         fontWeight: 'bold',
-        color: '#e8e8e8',
-        textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+        color: light ? '#1a1a1a' : '#e8e8e8',
+        textShadow: light ? '0 2px 4px rgba(255,255,255,0.5)' : '0 2px 4px rgba(0,0,0,0.5)',
         animation: 'flapBlink 1s infinite',
         padding: '0 3px',
       }}
