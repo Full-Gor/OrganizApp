@@ -973,3 +973,50 @@ export const RUSH_COLORS: { value: RushColor; label: string; bg: string; text: s
   { value: 'pink', label: 'Rose', bg: 'bg-pink-500', text: 'text-white', border: 'border-pink-500' },
   { value: 'yellow', label: 'Jaune', bg: 'bg-yellow-400', text: 'text-yellow-900', border: 'border-yellow-400' },
 ];
+
+// Apply a workflow to multiple rushes (replaces existing workflow and resets progress)
+export function applyWorkflowToRushes(
+  rushIds: string[],
+  workflowSteps: Omit<RushWorkflowStep, 'id'>[]
+): { success: string[]; failed: string[] } {
+  const result = { success: [] as string[], failed: [] as string[] };
+  const now = new Date().toISOString();
+
+  for (const rushId of rushIds) {
+    const rush = getRush(rushId);
+    if (!rush) {
+      result.failed.push(rushId);
+      continue;
+    }
+
+    // Create new workflow with IDs
+    const newWorkflow: RushWorkflowStep[] = workflowSteps.map((step, index) => ({
+      id: `step-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+      title: step.title,
+      order: index,
+      timeLimit: step.timeLimit,
+    }));
+
+    // Reset each project's tasks to match new workflow
+    rush.projects.forEach(project => {
+      project.currentStepIndex = 0;
+      project.tasks = newWorkflow.map(step => ({
+        stepId: step.id,
+        status: 'pending' as const,
+        timeSpent: 0,
+      }));
+      // Set first task to in_progress
+      if (project.tasks.length > 0) {
+        project.tasks[0].status = 'in_progress';
+        project.tasks[0].startedAt = now;
+      }
+    });
+
+    rush.workflow = newWorkflow;
+    rush.updatedAt = now;
+    saveRush(rush);
+    result.success.push(rushId);
+  }
+
+  return result;
+}

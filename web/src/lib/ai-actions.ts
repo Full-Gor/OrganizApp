@@ -1,6 +1,7 @@
 import { Project, Task, WatchItem, Notification, Priority, TaskStatus, ProjectStatus } from '@/types';
 import * as storage from './storage';
 import * as rushStorage from './rush-storage';
+import * as workflowStorage from './workflow-storage';
 import { generateId, projectColors } from './utils';
 
 export interface AIAction {
@@ -8,7 +9,8 @@ export interface AIAction {
         'create_event' | 'update_event' | 'delete_event' | 'update_project' | 'update_task' |
         'delete_project' | 'delete_task' | 'complete_task' | 'list_projects' | 'list_tasks' |
         'list_events' | 'get_stats' | 'search' | 'message' | 'plan_day' |
-        'create_rush' | 'create_multiple_rushes' | 'list_rushes' | 'delete_rush';
+        'create_rush' | 'create_multiple_rushes' | 'list_rushes' | 'delete_rush' |
+        'list_workflows' | 'create_workflow' | 'apply_workflow';
   data?: any;
   message?: string;
 }
@@ -687,6 +689,76 @@ export function executeAIAction(action: AIAction): { success: boolean; message: 
           return { success: true, message: `Rush "${rush.name}" supprime` };
         }
         return { success: false, message: "Rush non trouve" };
+      }
+
+      case 'list_workflows': {
+        const workflows = workflowStorage.getWorkflows();
+        return {
+          success: true,
+          message: `${workflows.length} workflow(s) disponible(s)`,
+          data: workflows.map(w => ({
+            id: w.id,
+            name: w.name,
+            steps: w.steps.map(s => s.title),
+            isDefault: w.isDefault
+          }))
+        };
+      }
+
+      case 'create_workflow': {
+        if (!action.data?.name || !action.data?.steps) {
+          return { success: false, message: "Nom et etapes requis" };
+        }
+        const workflow = workflowStorage.createWorkflow(
+          action.data.name,
+          action.data.steps
+        );
+        return {
+          success: true,
+          message: `Workflow "${workflow.name}" cree avec ${workflow.steps.length} etapes`
+        };
+      }
+
+      case 'apply_workflow': {
+        if (!action.data?.workflowName && !action.data?.workflowId) {
+          return { success: false, message: "Nom ou ID du workflow requis" };
+        }
+        if (!action.data?.rushNames && !action.data?.rushIds) {
+          return { success: false, message: "Noms ou IDs des Rush requis" };
+        }
+
+        // Find workflow
+        const workflows = workflowStorage.getWorkflows();
+        const workflow = workflows.find(w =>
+          w.id === action.data.workflowId ||
+          w.name.toLowerCase().includes(action.data.workflowName?.toLowerCase() || '')
+        );
+        if (!workflow) {
+          return { success: false, message: "Workflow non trouve" };
+        }
+
+        // Find rushes
+        const allRushes = rushStorage.getRushes();
+        const rushIds: string[] = [];
+
+        if (action.data.rushIds) {
+          rushIds.push(...action.data.rushIds);
+        } else if (action.data.rushNames) {
+          for (const name of action.data.rushNames) {
+            const rush = allRushes.find(r => r.name.toLowerCase().includes(name.toLowerCase()));
+            if (rush) rushIds.push(rush.id);
+          }
+        }
+
+        if (rushIds.length === 0) {
+          return { success: false, message: "Aucun Rush trouve" };
+        }
+
+        const result = rushStorage.applyWorkflowToRushes(rushIds, workflow.steps);
+        return {
+          success: true,
+          message: `Workflow "${workflow.name}" applique a ${result.success.length} Rush`
+        };
       }
 
       case 'message':

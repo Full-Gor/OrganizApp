@@ -2,10 +2,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw, GripVertical, Palette, Edit3, Sparkles } from 'lucide-react';
+import { Zap, Plus, Play, Pause, Check, SkipForward, Clock, AlertTriangle, BarChart3, X, Trash2, StopCircle, FileText, PlusCircle, RotateCcw, GripVertical, Palette, Edit3, Sparkles, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Rush, RushProject, RushWorkflowStep, RushStats, RushColor } from '@/types';
+import { Rush, RushProject, RushWorkflowStep, RushStats, RushColor, SavedWorkflow } from '@/types';
 import * as rushStorage from '@/lib/rush-storage';
+import * as workflowStorage from '@/lib/workflow-storage';
 import DissolveTimer from '@/components/DissolveTimer';
 
 export default function RushPage() {
@@ -13,6 +14,7 @@ export default function RushPage() {
   const [activeRush, setActiveRush] = useState<Rush | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [taskStartTime, setTaskStartTime] = useState<number | null>(null);
 
@@ -296,6 +298,24 @@ export default function RushPage() {
     }
   };
 
+  const handleApplyWorkflow = (workflow: SavedWorkflow, selectedRushIds: string[]) => {
+    const result = rushStorage.applyWorkflowToRushes(
+      selectedRushIds,
+      workflow.steps
+    );
+    if (result.success.length > 0) {
+      // Reload all rushes
+      const reloaded = rushStorage.getRushes();
+      setRushes(reloaded);
+      // Update activeRush if it was modified
+      if (activeRush && result.success.includes(activeRush.id)) {
+        const updatedActive = reloaded.find(r => r.id === activeRush.id);
+        if (updatedActive) setActiveRush(updatedActive);
+      }
+    }
+    setShowWorkflowModal(false);
+  };
+
   const getProjectProgress = (project: RushProject) => {
     const completed = project.tasks.filter(t => t.status === 'completed' || t.status === 'skipped').length;
     return Math.round((completed / project.tasks.length) * 100);
@@ -372,6 +392,15 @@ export default function RushPage() {
             >
               <BarChart3 className="w-4 h-4" />
               <span className="hidden sm:inline">Stats</span>
+            </button>
+          )}
+          {rushes.length > 0 && (
+            <button
+              onClick={() => setShowWorkflowModal(true)}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Workflows</span>
             </button>
           )}
           <button
@@ -465,6 +494,15 @@ export default function RushPage() {
         <StatsModal
           rush={activeRush}
           onClose={() => setShowStatsModal(false)}
+        />
+      )}
+
+      {/* Workflow Modal */}
+      {showWorkflowModal && (
+        <WorkflowModal
+          rushes={rushes}
+          onClose={() => setShowWorkflowModal(false)}
+          onApply={handleApplyWorkflow}
         />
       )}
     </div>
@@ -1471,6 +1509,207 @@ function StatsModal({ rush, onClose }: { rush: Rush; onClose: () => void }) {
                 })}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// WorkflowModal Component - Apply workflow to multiple rushes
+function WorkflowModal({
+  rushes,
+  onClose,
+  onApply,
+}: {
+  rushes: Rush[];
+  onClose: () => void;
+  onApply: (workflow: SavedWorkflow, selectedRushIds: string[]) => void;
+}) {
+  const [workflows, setWorkflows] = useState<SavedWorkflow[]>([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<SavedWorkflow | null>(null);
+  const [selectedRushIds, setSelectedRushIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setWorkflows(workflowStorage.getWorkflows());
+  }, []);
+
+  const toggleRush = (rushId: string) => {
+    setSelectedRushIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(rushId)) {
+        newSet.delete(rushId);
+      } else {
+        newSet.add(rushId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedRushIds(new Set(rushes.map(r => r.id)));
+  };
+
+  const selectNone = () => {
+    setSelectedRushIds(new Set());
+  };
+
+  const handleApply = () => {
+    if (!selectedWorkflow || selectedRushIds.size === 0) return;
+    onApply(selectedWorkflow, Array.from(selectedRushIds));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Settings className="w-5 h-5 text-violet-600" />
+            Appliquer un Workflow
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(90vh-140px)]">
+          {/* Workflow selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choisir un workflow
+            </label>
+            <select
+              value={selectedWorkflow?.id || ''}
+              onChange={(e) => {
+                const wf = workflows.find(w => w.id === e.target.value);
+                setSelectedWorkflow(wf || null);
+              }}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+            >
+              <option value="">-- Selectionner --</option>
+              <optgroup label="Templates par defaut">
+                {workflows.filter(w => w.isDefault).map(wf => (
+                  <option key={wf.id} value={wf.id}>
+                    {wf.name} ({wf.steps.length} etapes)
+                  </option>
+                ))}
+              </optgroup>
+              {workflows.filter(w => !w.isDefault).length > 0 && (
+                <optgroup label="Mes workflows">
+                  {workflows.filter(w => !w.isDefault).map(wf => (
+                    <option key={wf.id} value={wf.id}>
+                      {wf.name} ({wf.steps.length} etapes)
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+
+          {/* Preview selected workflow */}
+          {selectedWorkflow && (
+            <div className="bg-violet-50 rounded-lg p-3">
+              <p className="text-sm font-medium text-violet-800 mb-2">Etapes du workflow :</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedWorkflow.steps.map((step, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 bg-violet-100 text-violet-700 text-xs rounded"
+                  >
+                    {i + 1}. {step.title}
+                    {step.timeLimit && <span className="text-violet-500 ml-1">({step.timeLimit}min)</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rush selector */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Selectionner les Rush a modifier
+              </label>
+              <div className="flex gap-2 text-xs">
+                <button
+                  onClick={selectAll}
+                  className="text-violet-600 hover:underline"
+                >
+                  Tout
+                </button>
+                <span className="text-gray-300">|</span>
+                <button
+                  onClick={selectNone}
+                  className="text-violet-600 hover:underline"
+                >
+                  Aucun
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+              {rushes.map(rush => {
+                const colorConfig = rushStorage.RUSH_COLORS.find(c => c.value === rush.color);
+                return (
+                  <label
+                    key={rush.id}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors",
+                      selectedRushIds.has(rush.id) ? "bg-violet-50" : "hover:bg-gray-50"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRushIds.has(rush.id)}
+                      onChange={() => toggleRush(rush.id)}
+                      className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                    />
+                    <div
+                      className={cn(
+                        "w-3 h-3 rounded-full",
+                        colorConfig?.bg || "bg-gray-400"
+                      )}
+                    />
+                    <span className="flex-1 text-sm font-medium">{rush.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {rush.projects.length} projet{rush.projects.length > 1 ? 's' : ''}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Warning */}
+          {selectedRushIds.size > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium">Attention</p>
+                <p>La progression des taches sera reinitialisee pour les {selectedRushIds.size} Rush selectionne{selectedRushIds.size > 1 ? 's' : ''}.</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t flex gap-2 justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleApply}
+            disabled={!selectedWorkflow || selectedRushIds.size === 0}
+            className={cn(
+              "px-4 py-2 rounded-lg transition-colors flex items-center gap-2",
+              selectedWorkflow && selectedRushIds.size > 0
+                ? "bg-violet-600 text-white hover:bg-violet-700"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            )}
+          >
+            <Check className="w-4 h-4" />
+            Appliquer ({selectedRushIds.size} Rush)
+          </button>
         </div>
       </div>
     </div>

@@ -151,3 +151,13 @@ export interface RushStats {
   fastestProject?: { name: string; time: number };
   slowestProject?: { name: string; time: number };
 }
+
+// Saved Workflow for reuse
+export interface SavedWorkflow {
+  id: string;
+  name: string;
+  steps: Omit<RushWorkflowStep, 'id'>[];
+  isDefault?: boolean; // Built-in templates
+  createdAt: string;
+  updatedAt: string;
+}
