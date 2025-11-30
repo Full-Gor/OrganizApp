@@ -56,10 +56,10 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
         style={{
           background: 'linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 100%)',
           boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
-          padding: '12px 16px',
+          padding: '8px 12px',
         }}
       >
-        <div className="flex justify-center items-center gap-3">
+        <div className="flex justify-center items-center gap-1">
           {(['h0', 'h1'] as const).map((key) => (
             <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={false} />
           ))}
@@ -83,10 +83,10 @@ export default function DissolveTimer({ theme, className }: DissolveTimerProps) 
         style={{
           background: 'linear-gradient(180deg, #f5f5f5 0%, #e8e8e8 100%)',
           boxShadow: '0 20px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
-          padding: '12px 16px',
+          padding: '8px 12px',
         }}
       >
-        <div className="flex justify-center items-center gap-3">
+        <div className="flex justify-center items-center gap-1">
           {(['h0', 'h1'] as const).map((key) => (
             <SplitFlapDigit key={key} value={time[key]} isChanging={changingDigits.has(key)} light={true} />
           ))}
@@ -195,8 +195,8 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
     <div
       className="relative"
       style={{
-        width: '50px',
-        height: '75px',
+        width: '38px',
+        height: '50px',
         perspective: '400px',
         transformStyle: 'preserve-3d',
       }}
@@ -226,9 +226,9 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           className="absolute rounded-full z-20"
           style={{
             top: '50%',
-            left: '4px',
-            width: '6px',
-            height: '6px',
+            left: '3px',
+            width: '4px',
+            height: '4px',
             background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
@@ -237,9 +237,9 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           className="absolute rounded-full z-20"
           style={{
             top: '50%',
-            right: '4px',
-            width: '6px',
-            height: '6px',
+            right: '3px',
+            width: '4px',
+            height: '4px',
             background: colors.rivetBg,
             transform: 'translateY(-50%)',
           }}
@@ -258,12 +258,12 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           <span
             style={{
               fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-              fontSize: '56px',
+              fontSize: '36px',
               fontWeight: 'bold',
               color: colors.digitColor,
-              lineHeight: '75px',
+              lineHeight: '50px',
               textShadow: colors.textShadow,
-              letterSpacing: '-2px',
+              letterSpacing: '-1px',
               transform: 'translateY(50%)',
             }}
           >
@@ -284,12 +284,12 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
           <span
             style={{
               fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-              fontSize: '56px',
+              fontSize: '36px',
               fontWeight: 'bold',
               color: colors.digitColor,
-              lineHeight: '75px',
+              lineHeight: '50px',
               textShadow: colors.textShadow,
-              letterSpacing: '-2px',
+              letterSpacing: '-1px',
               transform: 'translateY(-50%)',
             }}
           >
@@ -320,12 +320,12 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
             <span
               style={{
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-                fontSize: '56px',
+                fontSize: '36px',
                 fontWeight: 'bold',
                 color: colors.digitColor,
-                lineHeight: '75px',
+                lineHeight: '50px',
                 textShadow: colors.textShadow,
-                letterSpacing: '-2px',
+                letterSpacing: '-1px',
                 transform: 'translateY(50%)',
               }}
             >
@@ -344,12 +344,12 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
             <span
               style={{
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-                fontSize: '56px',
+                fontSize: '36px',
                 fontWeight: 'bold',
                 color: colors.digitColor,
-                lineHeight: '75px',
+                lineHeight: '50px',
                 textShadow: colors.textShadow,
-                letterSpacing: '-2px',
+                letterSpacing: '-1px',
                 transform: 'translateY(-50%)',
               }}
             >
@@ -382,12 +382,12 @@ function SplitFlapDigit({ value, isChanging, light = false }: { value: string; i
             <span
               style={{
                 fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-                fontSize: '56px',
+                fontSize: '36px',
                 fontWeight: 'bold',
                 color: colors.digitColor,
-                lineHeight: '75px',
+                lineHeight: '50px',
                 textShadow: colors.textShadow,
-                letterSpacing: '-2px',
+                letterSpacing: '-1px',
                 transform: 'translateY(-50%)',
               }}
             >
@@ -415,12 +415,12 @@ function SplitFlapColon({ light = false }: { light?: boolean }) {
     <span
       style={{
         fontFamily: 'Arial Black, Helvetica Neue, sans-serif',
-        fontSize: '44px',
+        fontSize: '30px',
         fontWeight: 'bold',
         color: light ? '#1a1a1a' : '#e8e8e8',
         textShadow: light ? '0 2px 4px rgba(255,255,255,0.5)' : '0 2px 4px rgba(0,0,0,0.5)',
         animation: 'flapBlink 1s infinite',
-        padding: '0 3px',
+        padding: '0 2px',
       }}
     >
       :
