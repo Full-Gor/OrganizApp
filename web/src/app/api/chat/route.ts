@@ -65,6 +65,25 @@ UN Rush = gestion multi-projets avec workflow (etapes). Utilise pour travailler 
 - delete_rush (supprimer un Rush):
 {"action": "delete_rush", "data": {"rushName": "Nom du Rush"}, "response": "Rush supprime !"}
 
+== GERER LES WORKFLOWS ==
+- list_workflows (voir tous les workflows disponibles):
+{"action": "list_workflows", "response": "Voici les workflows !"}
+
+- create_workflow (creer un nouveau workflow personnalise):
+{"action": "create_workflow", "data": {
+  "name": "Mon Workflow",
+  "steps": [
+    {"title": "Etape 1", "timeLimit": 10},
+    {"title": "Etape 2", "timeLimit": 20}
+  ]
+}, "response": "Workflow cree !"}
+
+- apply_workflow (appliquer un workflow a des Rush):
+{"action": "apply_workflow", "data": {
+  "workflowName": "Feature Simple",
+  "rushNames": ["Rush 1", "Rush 2"]
+}, "response": "Workflow applique !"}
+
 == AUTRES ACTIONS ==
 - create_project, create_task, delete_task, delete_project, complete_task
 - list_projects, list_tasks, list_events, get_stats
