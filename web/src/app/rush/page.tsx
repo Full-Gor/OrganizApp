@@ -1247,18 +1247,38 @@ function CreateRushModal({
 }) {
   const [name, setName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState(0);
+  const [selectedCustomWorkflow, setSelectedCustomWorkflow] = useState<string | null>(null);
   const [customWorkflow, setCustomWorkflow] = useState<{ title: string; timeLimit: number }[]>([]);
   const [projectNames, setProjectNames] = useState('');
   const [useCustom, setUseCustom] = useState(false);
+  const [saveWorkflow, setSaveWorkflow] = useState(false);
+  const [workflowName, setWorkflowName] = useState('');
+  const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflow[]>([]);
+
+  // Load saved workflows on mount
+  useEffect(() => {
+    setSavedWorkflows(workflowStorage.getCustomWorkflows());
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const projects = projectNames.split('\n').map(p => p.trim()).filter(Boolean);
     if (!name || projects.length === 0) return;
 
-    const workflow = useCustom
-      ? customWorkflow.map((w, i) => ({ title: w.title, order: i + 1, timeLimit: w.timeLimit || undefined }))
-      : rushStorage.DEFAULT_WORKFLOWS[selectedTemplate].steps;
+    let workflow: Omit<RushWorkflowStep, 'id'>[];
+
+    if (useCustom) {
+      workflow = customWorkflow.map((w, i) => ({ title: w.title, order: i + 1, timeLimit: w.timeLimit || undefined }));
+      // Save workflow if requested
+      if (saveWorkflow && workflowName.trim()) {
+        workflowStorage.createWorkflow(workflowName.trim(), workflow);
+      }
+    } else if (selectedCustomWorkflow) {
+      const saved = savedWorkflows.find(w => w.id === selectedCustomWorkflow);
+      workflow = saved ? saved.steps : rushStorage.DEFAULT_WORKFLOWS[selectedTemplate].steps;
+    } else {
+      workflow = rushStorage.DEFAULT_WORKFLOWS[selectedTemplate].steps;
+    }
 
     onCreate(name, workflow, projects);
   };
@@ -1294,12 +1314,13 @@ function CreateRushModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Workflow</label>
             <div className="space-y-2">
+              {/* Default templates */}
               {rushStorage.DEFAULT_WORKFLOWS.map((wf, index) => (
                 <label
                   key={index}
                   className={cn(
                     'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
-                    selectedTemplate === index && !useCustom
+                    selectedTemplate === index && !useCustom && !selectedCustomWorkflow
                       ? 'border-orange-500 bg-orange-50'
                       : 'border-gray-200 hover:border-gray-300'
                   )}
@@ -1307,8 +1328,8 @@ function CreateRushModal({
                   <input
                     type="radio"
                     name="template"
-                    checked={selectedTemplate === index && !useCustom}
-                    onChange={() => { setSelectedTemplate(index); setUseCustom(false); }}
+                    checked={selectedTemplate === index && !useCustom && !selectedCustomWorkflow}
+                    onChange={() => { setSelectedTemplate(index); setUseCustom(false); setSelectedCustomWorkflow(null); }}
                     className="text-orange-500"
                   />
                   <div>
@@ -1318,6 +1339,37 @@ function CreateRushModal({
                 </label>
               ))}
 
+              {/* Saved custom workflows */}
+              {savedWorkflows.length > 0 && (
+                <>
+                  <div className="text-xs text-gray-500 font-medium pt-2 border-t">Mes workflows</div>
+                  {savedWorkflows.map((wf) => (
+                    <label
+                      key={wf.id}
+                      className={cn(
+                        'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
+                        selectedCustomWorkflow === wf.id
+                          ? 'border-violet-500 bg-violet-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="template"
+                        checked={selectedCustomWorkflow === wf.id}
+                        onChange={() => { setSelectedCustomWorkflow(wf.id); setUseCustom(false); }}
+                        className="text-violet-500"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-violet-700">{wf.name}</div>
+                        <div className="text-xs text-gray-500">{wf.steps.length} etapes</div>
+                      </div>
+                    </label>
+                  ))}
+                </>
+              )}
+
+              {/* Custom / Personnaliser option */}
               <label
                 className={cn(
                   'flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors',
@@ -1330,11 +1382,11 @@ function CreateRushModal({
                   type="radio"
                   name="template"
                   checked={useCustom}
-                  onChange={() => setUseCustom(true)}
+                  onChange={() => { setUseCustom(true); setSelectedCustomWorkflow(null); }}
                   className="text-orange-500"
                 />
                 <div>
-                  <div className="font-medium">Personnalise</div>
+                  <div className="font-medium">Personnaliser</div>
                   <div className="text-xs text-gray-500">Creer vos propres etapes</div>
                 </div>
               </label>
@@ -1384,6 +1436,30 @@ function CreateRushModal({
               >
                 + Ajouter une etape
               </button>
+
+              {/* Save workflow option */}
+              {customWorkflow.length > 0 && (
+                <div className="pt-3 mt-3 border-t border-gray-200">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveWorkflow}
+                      onChange={(e) => setSaveWorkflow(e.target.checked)}
+                      className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500"
+                    />
+                    <span className="text-sm text-gray-700">Sauvegarder ce workflow</span>
+                  </label>
+                  {saveWorkflow && (
+                    <input
+                      type="text"
+                      value={workflowName}
+                      onChange={(e) => setWorkflowName(e.target.value)}
+                      placeholder="Nom du workflow"
+                      className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
