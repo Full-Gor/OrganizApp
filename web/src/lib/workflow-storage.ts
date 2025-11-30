@@ -1,64 +1,21 @@
 import { SavedWorkflow, RushWorkflowStep } from '@/types';
+import { DEFAULT_WORKFLOWS as RUSH_DEFAULT_WORKFLOWS } from './rush-storage';
 
 const WORKFLOW_STORAGE_KEY = 'organizapp_workflows';
 
-// Default workflow templates
-export const DEFAULT_WORKFLOWS: SavedWorkflow[] = [
-  {
-    id: 'default-feature-simple',
-    name: 'Feature Simple',
-    steps: [
-      { title: 'Analyse', order: 0, timeLimit: 10 },
-      { title: 'Implem', order: 1, timeLimit: 25 },
-      { title: 'Test', order: 2, timeLimit: 10 },
-      { title: 'Review', order: 3, timeLimit: 10 },
-    ],
-    isDefault: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'default-app-mobile',
-    name: 'App Mobile (Expo)',
-    steps: [
-      { title: 'Setup', order: 0, timeLimit: 15 },
-      { title: 'UI/UX', order: 1, timeLimit: 30 },
-      { title: 'Logic', order: 2, timeLimit: 45 },
-      { title: 'API', order: 3, timeLimit: 30 },
-      { title: 'Test Device', order: 4, timeLimit: 20 },
-    ],
-    isDefault: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'default-web-app',
-    name: 'Web App (Next.js)',
-    steps: [
-      { title: 'Setup', order: 0, timeLimit: 10 },
-      { title: 'Components', order: 1, timeLimit: 30 },
-      { title: 'API Routes', order: 2, timeLimit: 25 },
-      { title: 'Integration', order: 3, timeLimit: 20 },
-      { title: 'Deploy', order: 4, timeLimit: 15 },
-    ],
-    isDefault: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'default-bug-fix',
-    name: 'Bug Fix',
-    steps: [
-      { title: 'Repro', order: 0, timeLimit: 10 },
-      { title: 'Debug', order: 1, timeLimit: 20 },
-      { title: 'Fix', order: 2, timeLimit: 15 },
-      { title: 'Test', order: 3, timeLimit: 10 },
-    ],
-    isDefault: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// Convert rush-storage templates to SavedWorkflow format
+const DEFAULT_WORKFLOWS: SavedWorkflow[] = RUSH_DEFAULT_WORKFLOWS.map((template, index) => ({
+  id: `default-${index}`,
+  name: template.name,
+  steps: template.steps.map((step, i) => ({
+    title: step.title,
+    order: i,
+    timeLimit: step.timeLimit,
+  })),
+  isDefault: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}));
 
 // Get all workflows (defaults + custom)
 export function getWorkflows(): SavedWorkflow[] {
