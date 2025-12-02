@@ -1085,6 +1085,13 @@ function RushBoard({
                 <textarea
                   value={notesText}
                   onChange={(e) => setNotesText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      onUpdateNotes(editingNotes, notesText);
+                      setEditingNotes(null);
+                    }
+                  }}
                   placeholder="Ajouter des notes, observations, problemes..."
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
@@ -1119,6 +1126,13 @@ function RushBoard({
                 <textarea
                   value={projectNotesText}
                   onChange={(e) => setProjectNotesText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      onUpdateProjectNotes(editingProjectNotes, projectNotesText);
+                      setEditingProjectNotes(null);
+                    }
+                  }}
                   placeholder="Ajouter des notes sur ce projet: observations, problemes, liens utiles..."
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
